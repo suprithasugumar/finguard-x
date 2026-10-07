@@ -1,0 +1,141 @@
+# Curated US-GAAP Tags for FinGuard-X (Phase 1 & Phase 2)
+# All revenue variants, balance sheet, income statement, and cash flow tags
+# required for the 18 fundamental financial ratios and all 8 Beneish M-Score components.
+
+categories:
+  revenues:
+    description: "Revenue variants (total revenue, sales, operating revenue)"
+    tags:
+      - Revenues
+      - SalesRevenueNet
+      - RevenueFromContractWithCustomerExcludingAssessedTax
+      - SalesRevenueGoodsNet
+      - RealEstateRevenueNet
+      - InterestAndDividendIncomeOperating
+      - FinancialServicesRevenue
+      - RegulatedOperatingRevenue
+      - OperatingRevenue
+      - RevenueFromContractWithCustomerIncludingAssessedTax
+
+  cost_of_revenue:
+    description: "Cost of goods sold and cost of services"
+    tags:
+      - CostOfGoodsAndServicesSold
+      - CostOfRevenue
+      - CostOfGoodsSold
+
+  gross_profit:
+    description: "Gross profit"
+    tags:
+      - GrossProfit
+
+  sga_expense:
+    description: "Selling, general and administrative expenses"
+    tags:
+      - SellingGeneralAndAdministrativeExpense
+      - GeneralAndAdministrativeExpense
+      - SellingAndMarketingExpense
+
+  operating_income:
+    description: "Operating income / loss"
+    tags:
+      - OperatingIncomeLoss
+
+  net_income:
+    description: "Net income / loss"
+    tags:
+      - NetIncomeLoss
+      - ProfitLoss
+
+  depreciation_amortization:
+    description: "Depreciation, depletion, and amortization"
+    tags:
+      - DepreciationDepletionAndAmortization
+      - DepreciationAndAmortization
+      - Depreciation
+      - AmortizationOfIntangibleAssets
+
+  total_assets:
+    description: "Total assets"
+    tags:
+      - Assets
+
+  current_assets:
+    description: "Total current assets"
+    tags:
+      - AssetsCurrent
+
+  total_liabilities:
+    description: "Total liabilities"
+    tags:
+      - Liabilities
+
+  current_liabilities:
+    description: "Total current liabilities"
+    tags:
+      - LiabilitiesCurrent
+
+  stockholders_equity:
+    description: "Stockholders' equity"
+    tags:
+      - StockholdersEquity
+      - StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest
+
+  cash_and_equivalents:
+    description: "Cash and cash equivalents"
+    tags:
+      - CashAndCashEquivalentsAtCarryingValue
+      - CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents
+
+  receivables:
+    description: "Accounts receivable net"
+    tags:
+      - AccountsReceivableNetCurrent
+      - ReceivablesNetCurrent
+
+  inventory:
+    description: "Inventory net"
+    tags:
+      - InventoryNet
+
+  ppe_net:
+    description: "Property, plant, and equipment net"
+    tags:
+      - PropertyPlantAndEquipmentNet
+
+  securities:
+    description: "Marketable and available-for-sale securities"
+    tags:
+      - MarketableSecuritiesCurrent
+      - AvailableForSaleSecuritiesCurrent
+      - OtherShortTermInvestments
+
+  long_term_debt:
+    description: "Long term debt and capital lease obligations"
+    tags:
+      - LongTermDebtNoncurrent
+      - LongTermDebtAndCapitalLeaseObligations
+      - LongTermDebt
+
+  short_term_debt:
+    description: "Short term debt and current portion of long term debt"
+    tags:
+      - ShortTermBorrowings
+      - DebtCurrent
+      - LongTermDebtCurrent
+
+  payables:
+    description: "Accounts payable"
+    tags:
+      - AccountsPayableCurrent
+
+  operating_cash_flow:
+    description: "Net cash provided by (used in) operating activities"
+    tags:
+      - NetCashProvidedByUsedInOperatingActivities
+
+  capex:
+    description: "Payments to acquire property, plant, and equipment (capital expenditures)"
+    tags:
+      - PaymentsToAcquirePropertyPlantAndEquipment
+      - PaymentsToAcquireProductiveAssets
