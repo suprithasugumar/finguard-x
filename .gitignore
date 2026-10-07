@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# FinGuard-X Data Directories (R1: Real data, data/gold is NOT ignored)
+data/raw/
+data/cache/
+data/processed/
+!data/gold/
+!data/gold/**
+
+# Logs
+logs/
+*.log
+
+# Testing & Coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+
+# Environment & Secrets
+.env
+.env.local
+*.pem
+*.key
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Frontend build
+frontend/dist/
+frontend/node_modules/
