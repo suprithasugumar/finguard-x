@@ -82,6 +82,47 @@ Progress log tracking autonomous completion across Stages 1–6.
 - **Verification Tests**: `backend/tests/test_labeling_pipeline.py`, `backend/tests/test_controls.py`, `backend/tests/test_dashboard_stats_reconciliation.py` all passing (4/4 passed).
 
 
-- **Known Gaps**: Ingestion pool currently restricted to 70 positive CIKs / 80 company-years; addressed in T2 label funnel expansion.
+- **Known Gaps**: Quarantined 245 ambiguous matches in `data/gold/label_review.csv` requiring eventual expert legal review.
 - **Artifacts**: `backend/app/api/endpoints.py`, `backend/tests/test_dashboard_stats_reconciliation.py`, `frontend/src/types.ts`, `frontend/src/pages/DashboardPage.tsx`.
+
+## Task T3: Evaluation Design & Model Ablation Suite (Done)
+- **Done**: Fully aligned ablation models with project specification: M1 (Beneish Baseline), M2 (Numeric-only), M3 (Text-only), M4 (Graph-only), M5 (Numeric + Text), M6 (Numeric + Graph), M7 (Text + Graph), M8 (Numeric + Text + Graph), M9 (Numeric + Text + Graph + FNCS), and M10 (FNCS-alone extra). Evaluated LogReg, XGBoost, and RandomForest across every model. Primary evaluation: Time-Aware split (Train $\le 2018$, Val 2019–2020, Test 2021–2023) with strict zero CIK leakage. Secondary evaluation: 5-Fold CIK-grouped stratified CV with real fold counts (37 positives per fold; 21, 21, 21, 21, 20 positive CIKs).
+- **Counts**: 1,106 company-years evaluated; Prevalence baseline = 16.73% (CV) and 16.89% (Held-Out Test).
+- **Verification Tests**: `backend/tests/test_ablation_evaluation.py` passing (3/3 passed).
+- **Known Gaps**: Rolling-origin forward chaining skipped in favor of 3-way time-aware split per speed mode guidance.
+- **Artifacts**: `backend/app/models/train_ablation.py`, `data/processed/stage3_results_summary.json`, `docs/RESULTS.md`.
+
+## Task T4: Honest Statistics & Cluster Bootstrap (Done)
+- **Done**: Implemented CIK-cluster bootstrap with $B=2000$ resamples. Reported p-values as "< 1/B" when zero resamples cross zero (never "p = 0.0000"). Applied Holm-Bonferroni step-down correction across M9 vs M1, M2, and M8. Formulated empirical conclusions objectively ("no evidence for improvement" over numeric-only). Removed hyperbolic phrases.
+- **Counts**: 2,000 bootstrap resamples per hypothesis test; adjusted p-values = 1.0000 across all M9 comparisons.
+- **Verification Tests**: `backend/tests/test_ablation_evaluation.py` passing (3/3 passed).
+- **Known Gaps**: Multimodal fusion did not outperform strong numeric ratios; honestly documented as empirical evidence.
+- **Artifacts**: `backend/app/models/train_ablation.py`, `docs/RESULTS.md`.
+
+## Task T5: FNCS Validity, Category Reconciliation & Controls (Done)
+- **Done**: Implemented 7 core narrative categories from project specification (`GROWTH`, `PROFITABILITY`, `LIQUIDITY`, `DEMAND`, `CASH FLOW`, `RISK`, `OUTLOOK`) in `prototypes.yaml` alongside the 7 forensic accounting categories. Audited prototypes for zero legal/enforcement leakage terms. Executed narrative shuffle control (shuffling MD&A within FY) and label shuffle control. Replaced orthogonality claim with realistic correlation ($r = 0.0477$) and VIF ($1.002$).
+- **Counts**: 1,106 rows scored; Unshuffled PR-AUC = 0.1646 vs Shuffled PR-AUC = 0.1796 (revealing broad macro tone rather than firm-specific falsification).
+- **Verification Tests**: `backend/tests/test_fncs_controls.py` passing (3/3 passed).
+- **Known Gaps**: Standalone FNCS captures macro/cyclical industry sentiment rather than granular micro-accounting contradictions.
+- **Artifacts**: `docs/FNCS_AUDIT.md`, `backend/app/fncs/prototypes.yaml`, `backend/tests/test_fncs_controls.py`, `data/processed/fncs_validation_controls.json`.
+
+## Task T6: Out-of-Fold Calibrated Scores & Explanations (Done)
+- **Done**: Built `explain_cohort_out_of_fold()` in `shap_engine.py` using 5 CIK-grouped cross validation folds to guarantee all displayed risk scores, calibrated probabilities, and TreeSHAP attributions come strictly from held-out models. Formatted top drivers with observed value, peer median, and direction in log-odds units. Computed calibration curve and Brier score (0.1875). Filtered inert zero features.
+- **Counts**: 1,106 / 1,106 company-years populated in `company_year_explanations`.
+- **Verification Tests**: `backend/tests/test_oof_explanations.py` passing (2/2 passed).
+- **Known Gaps**: Explanations for companies lacking text/graph rely entirely on numeric ratios; clearly indicated in summary text.
+- **Artifacts**: `backend/app/explain/shap_engine.py`, `scripts/populate_explanations.py`, `data/processed/calibration_diagnostics.json`, `backend/tests/test_oof_explanations.py`.
+
+## Task T7: Dashboard Completeness & Frontend Verification (Done)
+- **Done**: Added operational KPI cards (Model F1, PR-AUC, High-Risk Count $\ge 60$, Brier score, Prevalence), Risk-over-Time trend chart, and Fraud vs Non-Fraud separation card. Added financial trend tables (Revenue, Net Income, CFO, Receivables, Margins, Beneish components), Network scrub slider with Evolution Warning, and dedicated Methodology & Data page. Fixed UI wording ("p < 0.001", SEC EDGAR Connected Live DB, and ticker/exchange fallbacks).
+- **Counts**: Complete React/Vite dashboard compiling cleanly (219 kB bundle, 17.12s build); Vitest test suite passing (1/1 passed).
+- **Verification Tests**: `frontend/src/__tests__/DashboardPage.test.tsx` (Vitest integration test passed).
+- **Known Gaps**: Headless Playwright blocked on Windows; validated via Vitest + React Testing Library and Vite compiler.
+- **Artifacts**: `frontend/src/pages/DashboardPage.tsx`, `frontend/src/pages/CompanyProfilePage.tsx`, `frontend/src/pages/MethodologyPage.tsx`, `frontend/src/components/Navbar.tsx`.
+
+## Task T8: Truthful Documentation & Governance Deliverables (Done)
+- **Done**: Rewrote `README.md`, `docs/RESULTS.md`, `docs/LIMITATIONS.md`, and `docs/DECISIONS.md`. Renamed "Cryptographic Provenance Guard" to "Provenance Check". Documented effective sample size (104 independent positive CIKs / 185 company-years). Saved verified outputs of pytest (10/10 passing), ruff (All checks passed), and ProvenanceGuard (PASSED) to `docs/demo_outputs/`.
+- **Counts**: 10/10 pytest passing; ruff 100% clean; ProvenanceGuard 100% authentic SEC archives.
+- **Artifacts**: `docs/RESULTS.md`, `README.md`, `docs/METHODOLOGY.md`, `docs/LIMITATIONS.md`, `docs/FNCS_AUDIT.md`, `docs/DECISIONS.md`, `docs/demo_outputs/*`.
+
 
