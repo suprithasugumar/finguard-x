@@ -89,8 +89,8 @@ export const DashboardPage: React.FC = () => {
             <span className="ml-2 text-xs text-slate-500">Company-Years</span>
           </div>
           <div className="mt-1 text-xs text-slate-600">
-            <span className="font-semibold text-rose-600">{stats.cohort.unique_positives} Positives</span> vs{" "}
-            <span className="font-semibold text-slate-700">{stats.cohort.unique_controls} Controls</span> (1:5)
+            <span className="font-semibold text-rose-600">{stats.cohort.positive_records} Positives</span> ({stats.cohort.unique_positives} firms) vs{" "}
+            <span className="font-semibold text-slate-700">{stats.cohort.control_records} Controls</span> ({stats.cohort.unique_controls} firms)
           </div>
         </div>
 

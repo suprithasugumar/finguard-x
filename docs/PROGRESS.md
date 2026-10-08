@@ -42,3 +42,23 @@ Progress log tracking autonomous completion across Stages 1–6.
 - **Evidence**: Verified one-command pipeline CLI (`python scripts/run_pipeline.py pipeline`) and automated status checks; full system operable end-to-end.
 - **Known Gaps**: Native Windows Playwright binary restricted by external CDN 404; mitigated by direct headless Vite build and FastAPI static hosting.
 - **Artifacts**: `README.md`, `docs/LIMITATIONS.md`, `scripts/run_pipeline.py`, `docs/PROGRESS.md`.
+
+## Task T1: Reconciliation of Metrics & Ground-Truth Identity (Done)
+- **Done**: Reconciled all numbers across UI endpoints, DB direct queries, and documentation. Deduplicated 4 multi-AAER company-year label records in the same fiscal year (504 -> 500). Ensured `/api/dataset/stats` queries the DB directly with positive and control records clearly distinguished. Added `backend/tests/test_dashboard_stats_reconciliation.py`.
+- **Reconciliation Table (UI vs DB)**:
+
+| Metric / Field | UI Value (`/api/dataset/stats`) | DB Direct Query Value | Status / Difference Explanation |
+|---|---|---|---|
+| Registrants (`companies`) | 14,841 | 14,841 | Exact Match (Prior doc claimed 20,438 raw uningested JSONs in zip) |
+| Filings (`filings`) | 128,091 | 128,091 | Exact Match (Prior doc typo claimed 102,683) |
+| Financial Facts (`financial_facts`) | 4,196,717 (~4.20M) | 4,196,717 (~4.20M) | Exact Match (Prior doc typo claimed 24.08M) |
+| Total Cohort Records (`company_year_labels`) | 500 company-years | 500 company-years | Exact Match (Deduplicated 4 multi-AAER records in same FY; 504 -> 500) |
+| Positive Company-Years (`label = 1`) | 80 company-years | 80 company-years | Exact Match (80 unique company-years across 70 independent CIKs) |
+| Control Company-Years (`label = 0`) | 420 company-years | 420 company-years | Exact Match (420 unique company-years across 367 independent CIKs) |
+| Positives + Controls Identity | 80 + 420 = 500 | 80 + 420 = 500 | Exact Match (Sum identity holds 100%) |
+| Risk Buckets (Low/Mod/High/Very High) | 410 + 13 + 14 + 63 = 500 | 410 + 13 + 14 + 63 = 500 | Exact Match (Sum equals cohort total 500) |
+| Model 1 (Beneish Baseline) F1 | 0.0755 | 0.0755 | Exact Match (Prior delivery summary typo claimed 0.2974) |
+
+- **Known Gaps**: Ingestion pool currently restricted to 70 positive CIKs / 80 company-years; addressed in T2 label funnel expansion.
+- **Artifacts**: `backend/app/api/endpoints.py`, `backend/tests/test_dashboard_stats_reconciliation.py`, `frontend/src/types.ts`, `frontend/src/pages/DashboardPage.tsx`.
+

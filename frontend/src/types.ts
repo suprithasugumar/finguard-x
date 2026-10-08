@@ -202,10 +202,13 @@ export interface DatasetStatsResponse {
   };
   cohort: {
     total_records: number;
+    positive_records: number;
+    control_records: number;
     unique_positives: number;
     unique_controls: number;
     pos_to_ctrl_ratio: string;
   };
+
   risk_distribution: Record<string, number>;
   coverage: {
     usable_graphs: number;

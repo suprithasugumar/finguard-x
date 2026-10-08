@@ -464,13 +464,20 @@ def get_dataset_stats():
         n_companies = session.execute(text("SELECT count(*) FROM companies")).scalar()
         n_filings = session.execute(text("SELECT count(*) FROM filings")).scalar()
         n_facts = session.execute(text("SELECT count(*) FROM financial_facts")).scalar()
-        n_positives = session.execute(
-            text("SELECT count(DISTINCT cik) FROM company_year_labels WHERE label = 1")
+        n_pos_records = session.execute(
+            text("SELECT count(*) FROM company_year_labels WHERE label = 1")
         ).scalar()
-        n_controls = session.execute(
-            text("SELECT count(DISTINCT cik) FROM company_year_labels WHERE label = 0")
+        n_ctrl_records = session.execute(
+            text("SELECT count(*) FROM company_year_labels WHERE label = 0")
         ).scalar()
         n_cohort = session.execute(text("SELECT count(*) FROM company_year_labels")).scalar()
+
+        n_pos_ciks = session.execute(
+            text("SELECT count(DISTINCT cik) FROM company_year_labels WHERE label = 1")
+        ).scalar()
+        n_ctrl_ciks = session.execute(
+            text("SELECT count(DISTINCT cik) FROM company_year_labels WHERE label = 0")
+        ).scalar()
 
         # Risk distribution from explanations
         risk_dist_rows = session.execute(
@@ -500,8 +507,10 @@ def get_dataset_stats():
             },
             "cohort": {
                 "total_records": n_cohort,
-                "unique_positives": n_positives,
-                "unique_controls": n_controls,
+                "positive_records": n_pos_records,
+                "control_records": n_ctrl_records,
+                "unique_positives": n_pos_ciks,
+                "unique_controls": n_ctrl_ciks,
                 "pos_to_ctrl_ratio": "1 : 5",
             },
             "risk_distribution": risk_dist,
@@ -512,3 +521,4 @@ def get_dataset_stats():
                 "fncs_coverage_pct": 100.0,
             },
         }
+
