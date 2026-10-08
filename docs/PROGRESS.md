@@ -23,4 +23,12 @@ Progress log tracking autonomous completion across Stages 1–6.
 - **Known Gaps**: Beneish M-Score baseline exhibits poor discrimination (ROC-AUC 0.4377); corporate positive set (80 cases) introduces wide bootstrap CI intervals.
 - **Artifacts**: docs/RESULTS.md generated with full ablation tables, paired bootstrap p-values, redundancy correlations, and permutation importances.
 
+## Stage 4: Multi-Modal TreeSHAP Explanations (Done)
+- **Done**: Built XGBoost TreeSHAP attribution grouped into 4 modalities (numeric, text, graph, FNCS), calibrated risk scores (0–100), and synthesized plain-language summaries with evidence snippets and graph edges.
+- **Counts**: 500 / 500 company-years explained; distribution: 410 Low (0-29), 13 Moderate (30-59), 14 High (60-79), 63 Very High (80-100); strictly labelled "Fraud Risk / Review Priority".
+- **Evidence**: Top factors and plain-language summaries verified across multiple registrants (e.g. CIK 0000004904, CIK 0000007084) linking specific accounting ratios to narrative/network discordance.
+- **Known Gaps**: Explanations for company-years lacking text or graphs attribute risk primarily to numeric and FNCS signals; flagged as review priority triage, not proof.
+- **Artifacts**: Populated company_year_explanations table via migration 005_explanations; summary serialized to data/processed/stage4_explanations_summary.json.
+
+
 
