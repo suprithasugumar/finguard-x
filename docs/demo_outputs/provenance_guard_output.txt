@@ -1,0 +1,2 @@
+ProvenanceGuard PASSED: All data verified against authentic SEC bulk archives.
+

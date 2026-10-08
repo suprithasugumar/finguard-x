@@ -134,24 +134,35 @@ Access the Vite dev interface at `http://localhost:5173/`.
 
 ## 5. Multi-Modal Ablation Benchmark Results
 
-Evaluated across 500 company-years (80 AAER corporate positives, 420 matched controls) using 5-fold CIK-grouped stratified cross-validation and 300 CIK-cluster bootstrap resamples:
+Evaluated across **1,106 company-years** (185 AAER corporate positives, 921 matched controls) using primary time-aware held-out evaluation (FY2021–FY2023 test) and secondary 5-fold CIK-grouped stratified cross-validation ($B=2000$ CIK-cluster bootstrap resamples):
 
-| Model | Modalities Included | Features | Classifier | PR-AUC (95% CI) | ROC-AUC (95% CI) | F1-Score | Balanced Acc |
+### Primary Time-Aware Held-Out Evaluation (Test Set FY2021–FY2023)
+*Prevalence (Random-Guess PR-AUC Baseline): **16.89%***
+
+| Model Architecture | Features | Best Val Classifier | Test PR-AUC | Baseline | Test ROC-AUC | F1-Score | Brier Score |
 |---|---|---|---|---|---|---|---|
-| **M1: Baseline** | Beneish M-Score Only | 8 | LogReg | 0.1537 [0.124, 0.207] | 0.4377 [0.366, 0.505] | 0.2974 | 0.4798 |
-| **M2: Numeric Full** | Numeric + Beneish | 26 | LogReg | 0.1873 [0.142, 0.252] | 0.5484 [0.478, 0.618] | 0.3158 | 0.5369 |
-| **M3: Text Alone** | Text Drift & Sentiment | 11 | LogReg | 0.1741 [0.134, 0.229] | 0.5332 [0.457, 0.603] | 0.3065 | 0.5286 |
-| **M4: Graph Alone** | Related-Party Network | 12 | LogReg | 0.1654 [0.130, 0.218] | 0.5039 [0.435, 0.575] | 0.2936 | 0.5036 |
-| **M5: FNCS Alone** | Cross-Modal Contradiction | 22 | LogReg | 0.2299 [0.173, 0.309] | 0.5960 [0.528, 0.665] | 0.3540 | 0.5702 |
-| **M6: Num + Text** | Numeric + Text Drift | 37 | XGBoost | 0.1834 [0.137, 0.247] | 0.5256 [0.450, 0.598] | 0.3023 | 0.5190 |
-| **M7: Num + Graph** | Numeric + Graph Metrics | 38 | XGBoost | 0.1622 [0.126, 0.218] | 0.4907 [0.418, 0.563] | 0.2885 | 0.4917 |
-| **M8: Num + Txt + Grp** | Tri-Modal Combination | 49 | XGBoost | 0.1669 [0.128, 0.228] | 0.5339 [0.461, 0.604] | 0.2872 | 0.5274 |
-| **M9: Full System** | All 4 Modalities (+ FNCS) | 71 | XGBoost | **0.2240 [0.166, 0.305]** | **0.6024 [0.534, 0.670]** | **0.3478** | **0.5786** |
+| **M1: Beneish M-Score Baseline** | 1 | Rule-based | 0.1716 | 0.1689 | 0.4377 | 0.1311 | 0.2032 |
+| **M2: Numeric-only** | 21 | XGBoost | 0.2220 | 0.1689 | 0.5502 | 0.1538 | 0.1627 |
+| **M3: Text-only** | 8 | RandomForest | 0.2025 | 0.1689 | 0.5642 | 0.0476 | 0.1473 |
+| **M4: Graph-only** | 15 | XGBoost | 0.1746 | 0.1689 | 0.5112 | 0.2845 | 0.1449 |
+| **M5: Numeric + Text** | 29 | XGBoost | 0.2027 | 0.1689 | 0.5287 | 0.1224 | 0.1647 |
+| **M6: Numeric + Graph** | 36 | XGBoost | 0.2251 | 0.1689 | 0.5443 | 0.1633 | 0.1612 |
+| **M7: Text + Graph** | 23 | RandomForest | 0.1756 | 0.1689 | 0.5157 | 0.0000 | 0.1634 |
+| **M8: Numeric + Text + Graph** | 44 | LogReg | 0.2533 | 0.1689 | 0.5670 | 0.2366 | 0.1484 |
+| **M9: Numeric + Text + Graph + FNCS** | 53 | LogReg | 0.2592 | 0.1689 | 0.5602 | 0.2366 | 0.1487 |
+| **M10: FNCS-alone (Extra)** | 9 | XGBoost | 0.1851 | 0.1689 | 0.5367 | 0.0714 | 0.1760 |
 
-**Statistical Significance**:
-Paired bootstrap test between Model 9 (Full System) and Model 8 (Tri-Modal without FNCS):
-- $\Delta\text{PR-AUC} = +0.0571$ ($p < 0.0001$)
-- $\Delta\text{ROC-AUC} = +0.0685$ ($p = 0.0133$)
+### Honest Statistical Significance & Hypotheses ($B=2000$ CIK-Cluster Bootstrap)
+*Pairwise comparisons of Model 9 (Full Multimodal) against baselines with Holm-Bonferroni correction:*
+
+| Comparison | Metric | Mean Difference | 95% Bootstrap CI | Raw p | Adjusted p (Holm) | Empirical Conclusion |
+|---|---|---|---|---|---|---|
+| M9 vs M8 (No FNCS) | PR-AUC | -0.0094 | [-0.0201, +0.0005] | 0.9705 | 1.0000 | no evidence for improvement |
+| M9 vs M2 (Numeric-Only) | PR-AUC | -0.0045 | [-0.0161, +0.0062] | 0.8035 | 1.0000 | no evidence for improvement |
+| M9 vs M1 (Beneish Baseline) | PR-AUC | -0.0126 | [-0.0584, +0.0287] | 0.7015 | 1.0000 | no evidence for improvement |
+
+*Plain statement on multimodal fusion:* Empirical evidence indicates that multimodal fusion did **not** achieve a statistically significant improvement over strong numeric-only baselines (mean $\Delta = -0.0045$, adjusted $p = 1.0000$). Financial accounting ratios remain the primary predictive signal for reporting misstatements.
+
 
 ---
 

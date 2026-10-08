@@ -1,0 +1,20 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.3.4, pluggy-1.6.0
+rootdir: C:\Users\RITHIKESH S\finguard-x
+configfile: pytest.ini
+plugins: anyio-4.15.1, cov-6.0.0
+collected 10 items
+
+backend\tests\test_dashboard_stats_reconciliation.py ..                  [ 20%]
+backend\tests\test_fncs_controls.py ...                                  [ 50%]
+backend\tests\test_oof_explanations.py ..                                [ 70%]
+backend\tests\test_ablation_evaluation.py ...                            [100%]
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:40
+  C:\Users\RITHIKESH S\finguard-x\.venv\Lib\site-packages\starlette\testclient.py:40: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 10 passed, 1 warning in 6.57s ========================
+
