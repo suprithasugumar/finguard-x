@@ -28,19 +28,36 @@ def upgrade() -> None:
         sa.Column("fraud_probability", sa.Float(), nullable=False),
         sa.Column("risk_score", sa.Integer(), nullable=False),
         sa.Column("risk_category", sa.String(length=20), nullable=False),
-        sa.Column("review_priority_label", sa.String(length=50), server_default="Fraud Risk / Review Priority", nullable=False),
+        sa.Column(
+            "review_priority_label",
+            sa.String(length=50),
+            server_default="Fraud Risk / Review Priority",
+            nullable=False,
+        ),
         sa.Column("modality_breakdown", sa.JSON(), nullable=False),
         sa.Column("top_factors", sa.JSON(), nullable=False),
         sa.Column("plain_language_summary", sa.Text(), nullable=False),
         sa.Column("evidence_snippets", sa.JSON(), nullable=False),
         sa.Column("evidence_edges", sa.JSON(), nullable=False),
         sa.Column("fncs_evidence", sa.JSON(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["filing_id"], ["filings.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_cye_cik_fy", "company_year_explanations", ["cik", "fiscal_year"], unique=True)
+    op.create_index(
+        "ix_cye_cik_fy", "company_year_explanations", ["cik", "fiscal_year"], unique=True
+    )
 
 
 def downgrade() -> None:
