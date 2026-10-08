@@ -1,9 +1,8 @@
 """Knowledge graph construction, related-party entity extraction, and topological feature engine (Novelty 2)."""
 
-import json
 import logging
 import re
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import networkx as nx
 
@@ -11,21 +10,73 @@ logger = logging.getLogger("finguard.graph.knowledge_graph")
 
 # Corporate Entity Patterns
 ORG_SUFFIXES = {
-    "inc", "inc.", "corp", "corp.", "corporation", "ltd", "ltd.", "limited",
-    "co", "co.", "company", "holdings", "group", "enterprises", "associates",
-    "llc", "llp", "lp", "partnership", "trust", "fund", "capital",
+    "inc",
+    "inc.",
+    "corp",
+    "corp.",
+    "corporation",
+    "ltd",
+    "ltd.",
+    "limited",
+    "co",
+    "co.",
+    "company",
+    "holdings",
+    "group",
+    "enterprises",
+    "associates",
+    "llc",
+    "llp",
+    "lp",
+    "partnership",
+    "trust",
+    "fund",
+    "capital",
 }
 SHELL_PATTERNS = {
-    "llc", "l.l.c.", "lp", "l.p.", "llp", "l.l.p.", "trust", "capital", "partners", "fund",
-    "ventures", "management", "holdings", "advisors", "properties", "investments",
-    "special purpose", "offshore", "cayman", "delaware", "nominee",
+    "llc",
+    "l.l.c.",
+    "lp",
+    "l.p.",
+    "llp",
+    "l.l.p.",
+    "trust",
+    "capital",
+    "partners",
+    "fund",
+    "ventures",
+    "management",
+    "holdings",
+    "advisors",
+    "properties",
+    "investments",
+    "special purpose",
+    "offshore",
+    "cayman",
+    "delaware",
+    "nominee",
 }
-HONORIFICS = {"mr", "mr.", "ms", "ms.", "mrs", "mrs.", "dr", "dr.", "chairman", "ceo", "director", "officer", "president"}
+HONORIFICS = {
+    "mr",
+    "mr.",
+    "ms",
+    "ms.",
+    "mrs",
+    "mrs.",
+    "dr",
+    "dr.",
+    "chairman",
+    "ceo",
+    "director",
+    "officer",
+    "president",
+}
 
 # Attempt to load spacy safely with fallback
 _SPACY_NLP = None
 try:
     import spacy
+
     try:
         _SPACY_NLP = spacy.load("en_core_web_sm", disable=["parser"])
     except Exception:
@@ -90,10 +141,18 @@ class RelatedPartyGraphExtractor:
         entities = set()
 
         # Rule-based regex matches
-        for pat in [self.person_officer_pattern, self.honorific_person_pattern, self.comma_officer_pattern]:
+        for pat in [
+            self.person_officer_pattern,
+            self.honorific_person_pattern,
+            self.comma_officer_pattern,
+        ]:
             for match in pat.finditer(related_party_text):
                 p_name = normalize_entity_name(match.group(1))
-                if len(p_name.split()) >= 2 and len(p_name) > 4 and p_name.lower() != focal_node.lower():
+                if (
+                    len(p_name.split()) >= 2
+                    and len(p_name) > 4
+                    and p_name.lower() != focal_node.lower()
+                ):
                     persons.add(p_name)
 
         for match in self.entity_pattern.finditer(related_party_text):
@@ -110,13 +169,23 @@ class RelatedPartyGraphExtractor:
                     if len(clean_ent) > 3 and clean_ent.lower() != focal_node.lower():
                         if ent.label_ == "PERSON" and len(clean_ent.split()) >= 2:
                             persons.add(clean_ent)
-                        elif ent.label_ == "ORG" and any(suf in ent.text.lower() for suf in ORG_SUFFIXES):
+                        elif ent.label_ == "ORG" and any(
+                            suf in ent.text.lower() for suf in ORG_SUFFIXES
+                        ):
                             entities.add(clean_ent)
             except Exception as e:
                 logger.debug(f"spaCy NER pass skipped: {e}")
 
         # Filter out common false positives
-        STOP_ENTITIES = {"Company", "The Company", "Board Of Directors", "Audit Committee", "Stock Option", "Common Stock", "United States"}
+        STOP_ENTITIES = {
+            "Company",
+            "The Company",
+            "Board Of Directors",
+            "Audit Committee",
+            "Stock Option",
+            "Common Stock",
+            "United States",
+        }
         persons = {p for p in persons if p not in STOP_ENTITIES}
         entities = {e for e in entities if e not in STOP_ENTITIES and e not in persons}
 
@@ -142,12 +211,14 @@ class RelatedPartyGraphExtractor:
                 for p in found_p:
                     for e in found_e:
                         G.add_edge(p, e, relation="AFFILIATION_OR_OWNERSHIP", weight=2.0)
-                        evidence_edges.append({
-                            "source": p,
-                            "target": e,
-                            "relation": "AFFILIATION_OR_OWNERSHIP",
-                            "evidence_sentence": s.strip(),
-                        })
+                        evidence_edges.append(
+                            {
+                                "source": p,
+                                "target": e,
+                                "relation": "AFFILIATION_OR_OWNERSHIP",
+                                "evidence_sentence": s.strip(),
+                            }
+                        )
 
         features = self._compute_graph_features(G, prior_graph, evidence_edges)
         return G, features
@@ -189,32 +260,35 @@ class RelatedPartyGraphExtractor:
             curr_nodes = set(G.nodes())
             prior_nodes = set(prior_graph.nodes())
             node_union = curr_nodes | prior_nodes
-            node_churn = 1.0 - (len(curr_nodes & prior_nodes) / len(node_union)) if node_union else 0.0
+            node_churn = (
+                1.0 - (len(curr_nodes & prior_nodes) / len(node_union)) if node_union else 0.0
+            )
 
             curr_edges = {tuple(sorted(e)) for e in G.edges()}
             prior_edges = {tuple(sorted(e)) for e in prior_graph.edges()}
             edge_union = curr_edges | prior_edges
-            edge_churn = 1.0 - (len(curr_edges & prior_edges) / len(edge_union)) if edge_union else 0.0
+            edge_churn = (
+                1.0 - (len(curr_edges & prior_edges) / len(edge_union)) if edge_union else 0.0
+            )
         else:
             node_churn = 0.0
             edge_churn = 0.0
 
         # Novelty 2: Composite Graph Anomaly Score [0, 1]
         # High opacity: many shell/holding entities, high intermediary betweenness, high churn
-        shell_ratio = (num_shells / max(num_nodes - 1, 1))
+        shell_ratio = num_shells / max(num_nodes - 1, 1)
         anomaly_score = float(
-            0.35 * shell_ratio +
-            0.25 * min(max_betweenness * 2.0, 1.0) +
-            0.20 * node_churn +
-            0.20 * min(density * 2.0, 1.0)
+            0.35 * shell_ratio
+            + 0.25 * min(max_betweenness * 2.0, 1.0)
+            + 0.20 * node_churn
+            + 0.20 * min(density * 2.0, 1.0)
         )
         anomaly_score = float(max(0.0, min(1.0, anomaly_score)))
 
         # Serializable Payload for UI
         payload = {
             "nodes": [
-                {"id": n, "label": n, "type": G.nodes[n].get("type", "ENTITY")}
-                for n in G.nodes()
+                {"id": n, "label": n, "type": G.nodes[n].get("type", "ENTITY")} for n in G.nodes()
             ],
             "edges": [
                 {
@@ -250,10 +324,7 @@ class RelatedPartyGraphExtractor:
     def _empty_features(self, G: nx.Graph) -> Dict[str, Any]:
         """Return zeroed features when graph is unavailable."""
         payload = {
-            "nodes": [
-                {"id": n, "label": n, "type": "FOCAL_COMPANY"}
-                for n in G.nodes()
-            ],
+            "nodes": [{"id": n, "label": n, "type": "FOCAL_COMPANY"} for n in G.nodes()],
             "edges": [],
         }
         return {

@@ -1,4 +1,5 @@
 """Knowledge graph and related-party network database models."""
+
 from typing import Any, Optional
 
 from sqlalchemy import JSON, Boolean, Float, ForeignKey, Index, Integer, String
@@ -47,6 +48,4 @@ class CompanyYearGraphFeatures(Base, TimestampMixin):
     graph_payload: Mapped[Any] = mapped_column(JSON, default=dict, nullable=False)
     evidence_edges: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
 
-    __table_args__ = (
-        Index("ix_cygf_cik_fy", "cik", "fiscal_year", unique=True),
-    )
+    __table_args__ = (Index("ix_cygf_cik_fy", "cik", "fiscal_year", unique=True),)

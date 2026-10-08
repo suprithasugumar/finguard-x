@@ -158,11 +158,16 @@ class SECClient:
                     cached=True,
                     db_session=db_session,
                 )
+                clean_headers = {
+                    k: v
+                    for k, v in cached_headers.items()
+                    if k.lower() not in ("content-encoding", "content-length")
+                }
                 request = httpx.Request("GET", url)
                 return httpx.Response(
                     status_code=status_code,
                     content=content,
-                    headers=cached_headers,
+                    headers=clean_headers,
                     request=request,
                 )
 

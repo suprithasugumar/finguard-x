@@ -1,6 +1,7 @@
 """XBRL financial facts extraction, R3 anti-leakage selection, and restatement tracking."""
 
 import logging
+import math
 from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
@@ -33,12 +34,20 @@ def load_curated_tags(yaml_path: Optional[Path] = None) -> Set[str]:
 
 
 def parse_date(date_str: Optional[str]) -> Optional[date]:
-    """Parse YYYY-MM-DD string to date object."""
+    """Parse date string (YYYY-MM-DD or textual like 'Sept. 30, 2023') to date object."""
     if not date_str or not isinstance(date_str, str):
         return None
+    s = date_str.strip()
     try:
-        return datetime.strptime(date_str.strip()[:10], "%Y-%m-%d").date()
+        return date.fromisoformat(s[:10])
     except ValueError:
+        pass
+    try:
+        from dateutil import parser as dt_parser
+
+        clean_s = s.replace("Sept.", "Sep.").replace("July", "Jul").replace("June", "Jun")
+        return dt_parser.parse(clean_s).date()
+    except Exception:
         return None
 
 
@@ -61,8 +70,9 @@ class FactsParser:
 
         raw_candidates: List[Dict[str, Any]] = []
 
-        for tag, tag_info in facts_node.items():
-            if tag not in self.curated_tags:
+        for tag in self.curated_tags:
+            tag_info = facts_node.get(tag)
+            if not tag_info:
                 continue
 
             units = tag_info.get("units", {})
@@ -88,7 +98,12 @@ class FactsParser:
                         continue
 
                 val = item.get("val")
-                if val is None or not isinstance(val, (int, float)):
+                if (
+                    val is None
+                    or not isinstance(val, (int, float))
+                    or math.isnan(val)
+                    or math.isinf(val)
+                ):
                     continue
 
                 accession = str(item.get("accn", "")).strip()
@@ -107,7 +122,7 @@ class FactsParser:
                         "period_start": start_date,
                         "period_end": end_date,
                         "fiscal_year": fiscal_year,
-                        "fiscal_period": item.get("fp", "FY"),
+                        "fiscal_period": item.get("fp") or "FY",
                         "form_type": form,
                         "accession_number": accession,
                         "filed_date": filed_date,

@@ -1,4 +1,5 @@
 """Explanations and multi-modal risk attribution database models (Stage 4)."""
+
 from typing import Any, Optional
 
 from sqlalchemy import JSON, Float, ForeignKey, Index, Integer, String, Text
@@ -22,8 +23,12 @@ class CompanyYearExplanation(Base, TimestampMixin):
 
     # Calibrated Risk Scoring
     fraud_probability: Mapped[float] = mapped_column(Float, nullable=False)
-    risk_score: Mapped[int] = mapped_column(Integer, nullable=False)  # round(100 * fraud_probability)
-    risk_category: Mapped[str] = mapped_column(String(20), nullable=False)  # Low, Moderate, High, Very High
+    risk_score: Mapped[int] = mapped_column(
+        Integer, nullable=False
+    )  # round(100 * fraud_probability)
+    risk_category: Mapped[str] = mapped_column(
+        String(20), nullable=False
+    )  # Low, Moderate, High, Very High
     review_priority_label: Mapped[str] = mapped_column(
         String(50), default="Fraud Risk / Review Priority", nullable=False
     )
@@ -38,6 +43,4 @@ class CompanyYearExplanation(Base, TimestampMixin):
     evidence_edges: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
     fncs_evidence: Mapped[Any] = mapped_column(JSON, default=dict, nullable=False)
 
-    __table_args__ = (
-        Index("ix_cye_cik_fy", "cik", "fiscal_year", unique=True),
-    )
+    __table_args__ = (Index("ix_cye_cik_fy", "cik", "fiscal_year", unique=True),)

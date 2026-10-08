@@ -90,7 +90,7 @@ class RequestLog(Base):
     response_time_ms: Mapped[float] = mapped_column(Float, nullable=False)
     cached: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 

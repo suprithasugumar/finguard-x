@@ -1,4 +1,5 @@
 """Financial Narrative Contradiction Score (FNCS) database models."""
+
 from typing import Any, Optional
 
 from sqlalchemy import JSON, Float, ForeignKey, Index, Integer, String
@@ -37,6 +38,4 @@ class CompanyYearFNCSFeatures(Base, TimestampMixin):
     fncs_evidence: Mapped[Any] = mapped_column(JSON, default=dict, nullable=False)
     explanation_sentences: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
 
-    __table_args__ = (
-        Index("ix_cyfncs_cik_fy", "cik", "fiscal_year", unique=True),
-    )
+    __table_args__ = (Index("ix_cyfncs_cik_fy", "cik", "fiscal_year", unique=True),)

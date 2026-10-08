@@ -1,10 +1,12 @@
 """Tests for Alembic migrations round-trip on PostgreSQL test database."""
 
+import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import inspect
 
 from backend.app.core.config import get_settings
+from backend.app.db.models import Base
 
 
 def test_alembic_downgrade_upgrade_roundtrip(test_db_url: str, db_engine):
@@ -16,7 +18,24 @@ def test_alembic_downgrade_upgrade_roundtrip(test_db_url: str, db_engine):
     alembic_cfg = Config(str(ini_path))
     alembic_cfg.set_main_option("sqlalchemy.url", test_db_url)
 
-    # 1. Downgrade to base
+    # 0. Clean slate to ensure Alembic manages schema transitions from head to base
+    Base.metadata.drop_all(bind=db_engine)
+    with db_engine.connect() as conn:
+        conn.execute(sa.text("DROP TABLE IF EXISTS alembic_version CASCADE"))
+        conn.commit()
+
+    # 1. Upgrade to head
+    with db_engine.connect() as conn:
+        alembic_cfg.attributes["connection"] = conn
+        command.upgrade(alembic_cfg, "head")
+        conn.commit()
+
+    inspector = inspect(db_engine)
+    tables_at_head = set(inspector.get_table_names())
+    assert "companies" in tables_at_head
+    assert "filing_sections" in tables_at_head
+
+    # 2. Downgrade to base
     with db_engine.connect() as conn:
         alembic_cfg.attributes["connection"] = conn
         command.downgrade(alembic_cfg, "base")
@@ -27,6 +46,7 @@ def test_alembic_downgrade_upgrade_roundtrip(test_db_url: str, db_engine):
     assert "companies" not in tables_after_downgrade
     assert "filings" not in tables_after_downgrade
     assert "request_log" not in tables_after_downgrade
+    assert "filing_sections" not in tables_after_downgrade
 
     # 2. Upgrade to head
     with db_engine.connect() as conn:

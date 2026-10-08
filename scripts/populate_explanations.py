@@ -33,13 +33,20 @@ def populate_explanations():
     logger.info("Initializing Stage 4: SHAP Explanations Population...")
     df = load_dataset()
 
-    # Fit ExplanationEngine
+    # Compute strictly out-of-fold explanations via 5-fold CIK-grouped cross validation
     explain_engine = MultiModalExplanationEngine()
-    explain_engine.fit(df)
+    logger.info("Computing strictly OUT-OF-FOLD TreeSHAP attributions and calibrated risk scores...")
+    raw_explanations, cal_diag = explain_engine.explain_cohort_out_of_fold(df)
+    logger.info(
+        f"Generated {len(raw_explanations)} out-of-fold explanations. "
+        f"Brier score: {cal_diag['brier_score']}"
+    )
 
-    logger.info("Computing multi-modal TreeSHAP attributions and calibrated risk scores...")
-    raw_explanations = explain_engine.explain_cohort(df)
-    logger.info(f"Generated {len(raw_explanations)} explanations.")
+    # Save calibration diagnostics
+    diag_path = Path("data/processed/calibration_diagnostics.json")
+    diag_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(diag_path, "w", encoding="utf-8") as f:
+        json.dump(cal_diag, f, indent=2)
 
     with Session(engine) as session:
         # Load evidence snippets from filing_nlp_features
