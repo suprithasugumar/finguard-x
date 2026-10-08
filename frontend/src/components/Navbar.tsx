@@ -1,9 +1,9 @@
 import React from "react";
-import { ShieldAlert, BarChart3, Search, Building2 } from "lucide-react";
+import { ShieldAlert, BarChart3, Search, Building2, BookOpen } from "lucide-react";
 
 interface NavbarProps {
-  activeTab: "dashboard" | "search" | "profile";
-  setActiveTab: (tab: "dashboard" | "search" | "profile") => void;
+  activeTab: "dashboard" | "search" | "profile" | "methodology";
+  setActiveTab: (tab: "dashboard" | "search" | "profile" | "methodology") => void;
   selectedCik: string | null;
 }
 
@@ -62,11 +62,24 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, selecte
             <Building2 className="w-4 h-4" />
             <span>Company Risk Profile</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab("methodology")}
+            className={`px-3.5 py-2 rounded-md text-sm font-medium flex items-center space-x-2 transition-colors ${
+              activeTab === "methodology"
+                ? "bg-sky-50 text-sky-700 font-semibold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Methodology & Data</span>
+          </button>
         </nav>
 
         <div className="flex items-center space-x-2">
           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-            SEC EDGAR Connected
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+            SEC EDGAR Connected (Live DB)
           </span>
         </div>
       </div>

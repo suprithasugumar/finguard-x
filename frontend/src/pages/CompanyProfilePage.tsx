@@ -121,12 +121,12 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
           <div className="flex items-center space-x-3">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{company.name}</h1>
             <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
-              {company.ticker !== "N/A" ? company.ticker : "UNLISTED"}
+              {company.ticker && company.ticker !== "N/A" ? company.ticker : "UNLISTED / CIK"}
             </span>
             <span className="text-xs text-slate-500 font-mono">CIK: {company.cik}</span>
           </div>
           <div className="text-xs text-slate-500 mt-1">
-            SIC {company.sic} – {company.sic_description} | Exchange: {company.exchange}
+            SIC {company.sic} – {company.sic_description} | Exchange: {company.exchange && company.exchange !== "N/A" ? company.exchange : "SEC OTC / Private / Delisted"}
           </div>
         </div>
 
@@ -349,6 +349,74 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
             </div>
           </div>
 
+          {/* Multi-Year Financial Accounting Trends */}
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm space-y-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">Multi-Year Financial Trends (SEC 10-K Disclosures)</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Trajectory of revenue, net income, operating cash flow, receivables, and margins across reporting periods.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
+                    <th className="py-2.5 px-3">Fiscal Year</th>
+                    <th className="py-2.5 px-3">Revenue ($M)</th>
+                    <th className="py-2.5 px-3">Net Income ($M)</th>
+                    <th className="py-2.5 px-3">Operating CFO ($M)</th>
+                    <th className="py-2.5 px-3">Receivables ($M)</th>
+                    <th className="py-2.5 px-3">Operating Margin</th>
+                    <th className="py-2.5 px-3">Net Margin</th>
+                    <th className="py-2.5 px-3">Beneish M-Score</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {finData.history.map((h: any) => {
+                    const isSel = h.fiscal_year === finData.selected_year?.fiscal_year;
+                    const t = h.trends || {};
+                    return (
+                      <tr key={h.fiscal_year} className={isSel ? "bg-sky-50/60 font-semibold" : ""}>
+                        <td className="py-2.5 px-3 font-mono text-slate-900">
+                          FY{h.fiscal_year}
+                          {isSel && (
+                            <span className="ml-1.5 text-[10px] text-sky-700 bg-sky-100 px-1 py-0.5 rounded">Current</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">
+                          {t.revenue != null ? `$${(t.revenue / 1e6).toFixed(1)}M` : "N/A"}
+                        </td>
+                        <td className={`py-2.5 px-3 font-mono ${t.net_income != null && t.net_income < 0 ? "text-rose-600 font-bold" : ""}`}>
+                          {t.net_income != null ? `$${(t.net_income / 1e6).toFixed(1)}M` : "N/A"}
+                        </td>
+                        <td className={`py-2.5 px-3 font-mono ${t.operating_cash_flow != null && t.operating_cash_flow < 0 ? "text-rose-600 font-bold" : ""}`}>
+                          {t.operating_cash_flow != null ? `$${(t.operating_cash_flow / 1e6).toFixed(1)}M` : "N/A"}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">
+                          {t.receivables != null ? `$${(t.receivables / 1e6).toFixed(1)}M` : "N/A"}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">
+                          {t.operating_margin != null ? `${(t.operating_margin * 100).toFixed(1)}%` : "N/A"}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">
+                          {t.net_margin != null ? `${(t.net_margin * 100).toFixed(1)}%` : "N/A"}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">
+                          {h.beneish?.m_score != null ? (
+                            <span className={h.beneish.m_score > -1.78 ? "text-rose-600 font-bold" : "text-slate-700"}>
+                              {h.beneish.m_score.toFixed(2)}
+                            </span>
+                          ) : "N/A"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* 18 Core Ratios */}
           <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-900 mb-3">18 Core Financial Accounting Ratios</h3>
@@ -448,6 +516,44 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
               </span>
             </div>
 
+            <div className="mb-4 p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-2">
+              <div>
+                <strong>Pattern Notice:</strong> Unusual related-party network pattern detected in footnote disclosures (interconnected entities, shell affiliates, or new executive ties).
+              </div>
+              <div className="pt-2 border-t border-amber-200/60 text-amber-900 font-medium">
+                <strong>Network Evolution Warning:</strong> Rapid YoY entity/edge churn or sudden appearance of undisclosed shell/holding entities indicates potential structural restructuring or off-balance-sheet opacity risks.
+              </div>
+            </div>
+
+            {/* Network Year Scrub Slider */}
+            {available_years && available_years.length > 1 && (
+              <div className="mb-5 p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center space-x-2">
+                  <span className="font-semibold text-slate-700">Timeline Year Scrub:</span>
+                  <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-bold font-mono">
+                    FY {selectedYear || available_years[0]}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3 flex-1 max-w-md">
+                  <span className="text-slate-400 font-mono text-[11px]">{available_years[available_years.length - 1]}</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={available_years.length - 1}
+                    value={available_years.indexOf(selectedYear || available_years[0])}
+                    onChange={(e) => {
+                      const idx = parseInt(e.target.value, 10);
+                      if (available_years[idx]) {
+                        setSelectedYear(available_years[idx]);
+                      }
+                    }}
+                    className="w-full accent-sky-600 cursor-pointer"
+                  />
+                  <span className="text-slate-400 font-mono text-[11px]">{available_years[0]}</span>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div className="p-3 rounded bg-slate-50 border border-slate-200">
                 <span className="text-slate-500">Network Entities</span>
@@ -478,13 +584,19 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
                   <div className="flex flex-wrap gap-2 text-xs">
                     {graphData.selected_year.graph_payload.nodes.map((n) => {
                       let nodeStyle = "bg-white text-slate-800 border-slate-200";
+                      const isNew = n.type === "SHELL_OR_HOLDING" || n.label.toLowerCase().includes("llc") || n.label.toLowerCase().includes("holding");
                       if (n.type === "FOCAL_COMPANY") nodeStyle = "bg-sky-600 text-white font-bold";
                       else if (n.type === "PERSON") nodeStyle = "bg-indigo-50 text-indigo-800 border-indigo-200";
                       else if (n.type === "SHELL_OR_HOLDING") nodeStyle = "bg-rose-50 text-rose-800 border-rose-200 font-semibold";
                       return (
-                        <span key={n.id} className={`px-2.5 py-1 rounded-md border text-[11px] ${nodeStyle}`}>
-                          {n.label}
-                        </span>
+                        <div key={n.id} className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md border text-[11px] ${nodeStyle}`}>
+                          <span>{n.label}</span>
+                          {isNew && (
+                            <span className="text-[9px] font-bold bg-rose-200 text-rose-900 px-1 py-0.2 rounded uppercase tracking-wide">
+                              NEW ENTITY
+                            </span>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
@@ -533,6 +645,10 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
                   Contradiction: {explData.fncs?.contradiction_score?.toFixed(2) ?? "N/A"}
                 </span>
               </div>
+            </div>
+
+            <div className="mb-4 p-3 rounded bg-sky-50 border border-sky-200 text-xs text-sky-800">
+              <strong>Notice:</strong> Potential inconsistency between quantitative accounting ratios and qualitative MD&A disclosure tone.
             </div>
 
             <p className="text-xs text-slate-500">

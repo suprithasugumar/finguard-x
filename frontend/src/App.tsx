@@ -3,9 +3,10 @@ import { Navbar } from "./components/Navbar";
 import { DashboardPage } from "./pages/DashboardPage";
 import { CompanySearchPage } from "./pages/CompanySearchPage";
 import { CompanyProfilePage } from "./pages/CompanyProfilePage";
+import { MethodologyPage } from "./pages/MethodologyPage";
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "search" | "profile">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "search" | "profile" | "methodology">("dashboard");
   const [selectedCik, setSelectedCik] = useState<string | null>("0000004977");
 
   const handleSelectCompany = (cik: string) => {
@@ -44,6 +45,7 @@ export const App: React.FC = () => {
             </div>
           )
         )}
+        {activeTab === "methodology" && <MethodologyPage />}
       </main>
 
       <footer className="border-t border-slate-200 bg-white py-6">

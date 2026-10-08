@@ -167,6 +167,8 @@ export interface ModelResultItem {
   f1_ci: [number, number, number];
   balanced_acc: number;
   balanced_acc_ci: [number, number, number];
+  brier_score?: number;
+  prevalence?: number;
   confusion_matrix: number[][];
 }
 
@@ -176,6 +178,18 @@ export interface ModelResultsResponse {
     positives: number[];
     controls: number[];
   };
+  kpis?: {
+    model_name: string;
+    clf_type: string;
+    f1: number;
+    pr_auc: number;
+    roc_auc: number;
+    prevalence: number;
+    brier_score: number;
+    high_risk_count: number;
+  };
+  statistical_comparisons?: Array<any>;
+  time_aware_evaluation?: Record<string, any>;
   paired_tests: {
     xgboost: {
       pr_auc_diff: { mean: number; ci_95: [number, number]; p_value: number };
@@ -210,6 +224,15 @@ export interface DatasetStatsResponse {
   };
 
   risk_distribution: Record<string, number>;
+  risk_over_time?: Array<{
+    fiscal_year: number;
+    avg_risk: number;
+    count: number;
+  }>;
+  fraud_vs_non_fraud?: {
+    controls: { avg_risk: number; count: number };
+    positives: { avg_risk: number; count: number };
+  };
   coverage: {
     usable_graphs: number;
     total_graphs: number;

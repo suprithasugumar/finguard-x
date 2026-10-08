@@ -85,12 +85,12 @@ export const DashboardPage: React.FC = () => {
             <ShieldAlert className="w-4 h-4 text-sky-600" />
           </div>
           <div className="mt-2 flex items-baseline">
-            <span className="text-2xl font-bold text-slate-900">{stats.cohort.total_records}</span>
+            <span className="text-2xl font-bold text-slate-900">{stats.cohort.total_records.toLocaleString()}</span>
             <span className="ml-2 text-xs text-slate-500">Company-Years</span>
           </div>
           <div className="mt-1 text-xs text-slate-600">
-            <span className="font-semibold text-rose-600">{stats.cohort.positive_records} Positives</span> ({stats.cohort.unique_positives} firms) vs{" "}
-            <span className="font-semibold text-slate-700">{stats.cohort.control_records} Controls</span> ({stats.cohort.unique_controls} firms)
+            <span className="font-semibold text-rose-600">{stats.cohort.positive_records.toLocaleString()} Positives</span> ({stats.cohort.unique_positives.toLocaleString()} firms) vs{" "}
+            <span className="font-semibold text-slate-700">{stats.cohort.control_records.toLocaleString()} Controls</span> ({stats.cohort.unique_controls.toLocaleString()} firms)
           </div>
         </div>
 
@@ -104,7 +104,7 @@ export const DashboardPage: React.FC = () => {
             <span className="ml-2 text-xs text-slate-500">Coverage</span>
           </div>
           <div className="mt-1 text-xs text-slate-600">
-            {stats.coverage.usable_graphs} / {stats.coverage.total_graphs} usable related-party networks
+            {stats.coverage.usable_graphs.toLocaleString()} / {stats.coverage.total_graphs.toLocaleString()} usable related-party networks
           </div>
         </div>
 
@@ -123,11 +123,125 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Risk Category Distribution Card */}
+      {/* 2b. Model Performance KPIs & Triage Cards (from API) */}
+      {results.kpis && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Benchmark Operational KPIs ({results.kpis.model_name} – {results.kpis.clf_type})
+            </h2>
+            <span className="text-[11px] text-slate-400 font-mono">Prevalence Baseline: {(results.kpis.prevalence * 100).toFixed(1)}%</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <span className="text-xs font-medium text-slate-500">Model F1-Score</span>
+              <div className="mt-1 text-2xl font-bold text-slate-900">{results.kpis.f1.toFixed(4)}</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">Inner-fold decision threshold</div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <span className="text-xs font-medium text-slate-500">PR-AUC (Precision-Recall)</span>
+              <div className="mt-1 text-2xl font-bold text-sky-700">{results.kpis.pr_auc.toFixed(4)}</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">Random guess: {results.kpis.prevalence.toFixed(4)}</div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <span className="text-xs font-medium text-slate-500">High Risk Cohort Cases</span>
+              <div className="mt-1 text-2xl font-bold text-rose-700">{results.kpis.high_risk_count.toLocaleString()}</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">Risk score &ge; 60/100 for review</div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <span className="text-xs font-medium text-slate-500">Brier Calibration Score</span>
+              <div className="mt-1 text-2xl font-bold text-emerald-700">{results.kpis.brier_score.toFixed(4)}</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">Mean squared calibration error</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Temporal Risk-Over-Time and Cohort Discrimination Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Risk Over Time Chart */}
+        <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-center mb-3">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Risk Over Time (Temporal Trend)</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Mean calibrated risk score per fiscal reporting year.</p>
+            </div>
+          </div>
+
+          {stats.risk_over_time && stats.risk_over_time.length > 0 ? (
+            <div className="mt-4 space-y-2">
+              {stats.risk_over_time.map((rot) => (
+                <div key={rot.fiscal_year} className="flex items-center text-xs">
+                  <span className="w-12 font-mono text-slate-600 font-semibold">{rot.fiscal_year}</span>
+                  <div className="flex-1 mx-3 bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        rot.avg_risk >= 50 ? "bg-rose-500" : rot.avg_risk >= 30 ? "bg-amber-500" : "bg-sky-500"
+                      }`}
+                      style={{ width: `${Math.min(100, Math.max(8, rot.avg_risk))}%` }}
+                    />
+                  </div>
+                  <span className="w-10 text-right font-bold text-slate-900">{rot.avg_risk.toFixed(1)}</span>
+                  <span className="w-16 text-right text-[11px] text-slate-400">({rot.count} yrs)</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-xs text-slate-400">Loading historical trend...</div>
+          )}
+        </div>
+
+        {/* Fraud vs Non-Fraud Risk Comparison */}
+        <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-center mb-3">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Fraud vs Non-Fraud Separation</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Comparison of average model risk score across ground truth cohorts.</p>
+            </div>
+          </div>
+
+          {stats.fraud_vs_non_fraud ? (
+            <div className="mt-6 space-y-6">
+              <div className="p-4 rounded-lg bg-rose-50/70 border border-rose-100">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-rose-900 uppercase tracking-wide">Corporate AAER Positives</span>
+                  <span className="text-2xl font-black text-rose-700">
+                    {stats.fraud_vs_non_fraud.positives.avg_risk.toFixed(1)}
+                    <span className="text-xs font-normal text-rose-500 ml-1">/ 100</span>
+                  </span>
+                </div>
+                <div className="text-xs text-rose-700 mt-1">
+                  Empirical mean calibrated risk across {stats.fraud_vs_non_fraud.positives.count.toLocaleString()} enforcement company-years.
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">Matched Controls (1:5 Cohort)</span>
+                  <span className="text-2xl font-black text-slate-700">
+                    {stats.fraud_vs_non_fraud.controls.avg_risk.toFixed(1)}
+                    <span className="text-xs font-normal text-slate-500 ml-1">/ 100</span>
+                  </span>
+                </div>
+                <div className="text-xs text-slate-600 mt-1">
+                  Empirical mean calibrated risk across {stats.fraud_vs_non_fraud.controls.count.toLocaleString()} matched peer company-years.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-xs text-slate-400">Loading cohort separation...</div>
+          )}
+        </div>
+      </div>
+
+      {/* 4. Risk Category Distribution Card */}
       <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">Calibrated Risk Score Distribution (Triage Categories)</h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Stratified classification labelled strictly as <strong className="text-slate-700">Fraud Risk / Review Priority</strong> (never &quot;fraud detected&quot;).
+          Stratified classification labelled strictly as <strong className="text-slate-700">Fraud Risk / Review Priority</strong> (probabilistic anomaly triage).
         </p>
 
         <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -244,58 +358,43 @@ export const DashboardPage: React.FC = () => {
 
       {/* 5. Paired Significance & Redundancy Check Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Paired Bootstrap Test */}
+        {/* Honest Statistical Significance & Holm-Bonferroni Correction */}
         <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
           <div className="flex items-center space-x-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <h3 className="text-base font-semibold text-slate-900">Paired Bootstrap Significance: Model 9 vs Model 8</h3>
+            <CheckCircle2 className="w-5 h-5 text-sky-600" />
+            <h3 className="text-base font-semibold text-slate-900">Honest Statistical Significance (CIK-Cluster Bootstrap B=2000)</h3>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Testing the incremental value of FNCS when appended to full multi-modal baseline (Numeric + Text + Graph).
+            Pairwise comparisons of Model 9 (Full Multimodal) against baselines with Holm-Bonferroni family-wise error control.
           </p>
 
           <div className="mt-4 space-y-3">
-            <div className="p-3.5 rounded bg-slate-50 border border-slate-200">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-semibold text-slate-800">XGBoost ΔPR-AUC (Model 9 – Model 8)</span>
-                <span className="font-bold text-emerald-600">
-                  {results.paired_tests.xgboost.pr_auc_diff.mean > 0 ? "+" : ""}
-                  {results.paired_tests.xgboost.pr_auc_diff.mean.toFixed(4)}
-                </span>
+            {results.statistical_comparisons && results.statistical_comparisons.length > 0 ? (
+              results.statistical_comparisons.map((c: any, idx: number) => {
+                const isSig = c.p_adj < 0.05;
+                const pDisplay = c.p_adj <= 0.001 ? "p < 0.001" : `p = ${c.p_adj.toFixed(4)}`;
+                return (
+                  <div key={idx} className="p-3.5 rounded bg-slate-50 border border-slate-200">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-slate-800">{c.comparison}</span>
+                      <span className={`font-bold ${c.mean_diff > 0 ? "text-emerald-600" : "text-slate-600"}`}>
+                        {c.mean_diff > 0 ? "+" : ""}{c.mean_diff.toFixed(4)} {c.metric}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex justify-between text-[11px] text-slate-500">
+                      <span>95% CI: [{c.ci_95[0].toFixed(4)}, {c.ci_95[1].toFixed(4)}]</span>
+                      <span className={`font-medium ${isSig ? "text-emerald-700" : "text-slate-600"}`}>
+                        Adj {pDisplay} ({c.conclusion})
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-3.5 rounded bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                Ablation comparisons loaded from database artifacts.
               </div>
-              <div className="mt-1 flex justify-between text-[11px] text-slate-500">
-                <span>95% CI: [{results.paired_tests.xgboost.pr_auc_diff.ci_95[0].toFixed(4)}, {results.paired_tests.xgboost.pr_auc_diff.ci_95[1].toFixed(4)}]</span>
-                <span className="font-medium text-slate-700">p = {results.paired_tests.xgboost.pr_auc_diff.p_value.toFixed(4)} (Significant)</span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded bg-slate-50 border border-slate-200">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-semibold text-slate-800">XGBoost ΔROC-AUC (Model 9 – Model 8)</span>
-                <span className="font-bold text-emerald-600">
-                  {results.paired_tests.xgboost.roc_auc_diff.mean > 0 ? "+" : ""}
-                  {results.paired_tests.xgboost.roc_auc_diff.mean.toFixed(4)}
-                </span>
-              </div>
-              <div className="mt-1 flex justify-between text-[11px] text-slate-500">
-                <span>95% CI: [{results.paired_tests.xgboost.roc_auc_diff.ci_95[0].toFixed(4)}, {results.paired_tests.xgboost.roc_auc_diff.ci_95[1].toFixed(4)}]</span>
-                <span className="font-medium text-slate-700">p = {results.paired_tests.xgboost.roc_auc_diff.p_value.toFixed(4)} (Significant)</span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded bg-slate-50 border border-slate-200">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-semibold text-slate-800">LogReg ΔPR-AUC (Model 9 – Model 8)</span>
-                <span className="font-bold text-sky-700">
-                  {results.paired_tests.logreg.pr_auc_diff.mean > 0 ? "+" : ""}
-                  {results.paired_tests.logreg.pr_auc_diff.mean.toFixed(4)}
-                </span>
-              </div>
-              <div className="mt-1 flex justify-between text-[11px] text-slate-500">
-                <span>95% CI: [{results.paired_tests.logreg.pr_auc_diff.ci_95[0].toFixed(4)}, {results.paired_tests.logreg.pr_auc_diff.ci_95[1].toFixed(4)}]</span>
-                <span className="font-medium text-slate-700">p = {results.paired_tests.logreg.pr_auc_diff.p_value.toFixed(4)} (Significant)</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
