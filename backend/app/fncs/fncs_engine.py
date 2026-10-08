@@ -1,6 +1,6 @@
 """Financial-Narrative Contradiction Score (FNCS) Engine (Novelty 1 / Novelty 3)."""
+
 import logging
-import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -19,13 +19,49 @@ from backend.app.nlp.narrative_drift import (
 logger = logging.getLogger("finguard.fncs.engine")
 
 LM_POSITIVE = {
-    "benefit", "benefits", "profitable", "profitability", "gain", "gains",
-    "growth", "grow", "grown", "grew", "improve", "improved", "improves",
-    "improving", "improvement", "positive", "success", "successful", "successfully",
-    "strength", "strong", "stronger", "strongest", "achieve", "achieved",
-    "exceed", "exceeded", "favorable", "favorably", "outperform", "outperformed",
-    "opportunity", "opportunities", "efficient", "efficiency", "innovative", "innovation",
-    "expanded", "expansion", "record", "rebound", "solid", "healthy",
+    "benefit",
+    "benefits",
+    "profitable",
+    "profitability",
+    "gain",
+    "gains",
+    "growth",
+    "grow",
+    "grown",
+    "grew",
+    "improve",
+    "improved",
+    "improves",
+    "improving",
+    "improvement",
+    "positive",
+    "success",
+    "successful",
+    "successfully",
+    "strength",
+    "strong",
+    "stronger",
+    "strongest",
+    "achieve",
+    "achieved",
+    "exceed",
+    "exceeded",
+    "favorable",
+    "favorably",
+    "outperform",
+    "outperformed",
+    "opportunity",
+    "opportunities",
+    "efficient",
+    "efficiency",
+    "innovative",
+    "innovation",
+    "expanded",
+    "expansion",
+    "record",
+    "rebound",
+    "solid",
+    "healthy",
 }
 
 
@@ -34,7 +70,11 @@ def compute_lm_tone(sentence: str) -> Tuple[float, int, int, int]:
     tokens = [w.strip(".,;:!?\"'()[]{}") for w in sentence.lower().split()]
     pos = sum(1 for t in tokens if t in LM_POSITIVE)
     neg = sum(1 for t in tokens if t in LM_NEGATIVE)
-    unc = sum(1 for t in tokens if t in LM_UNCERTAINTY or t in LM_FIN_UNCERTAINTY or t in CONDITIONAL_WORDS)
+    unc = sum(
+        1
+        for t in tokens
+        if t in LM_UNCERTAINTY or t in LM_FIN_UNCERTAINTY or t in CONDITIONAL_WORDS
+    )
 
     total_sentiment = pos + neg + unc
     if total_sentiment == 0:
@@ -53,7 +93,11 @@ def compute_lm_tone(sentence: str) -> Tuple[float, int, int, int]:
 class FNCSEngine:
     """Computes cross-modal financial-narrative contradiction scores across 7 accounting deception categories."""
 
-    def __init__(self, prototypes_path: Optional[Path] = None, embedding_cache: Optional[EmbeddingCache] = None):
+    def __init__(
+        self,
+        prototypes_path: Optional[Path] = None,
+        embedding_cache: Optional[EmbeddingCache] = None,
+    ):
         if prototypes_path is None:
             prototypes_path = Path(__file__).parent / "prototypes.yaml"
 
@@ -115,7 +159,11 @@ class FNCSEngine:
             top_sim = 0.0
             top_pos, top_neg, top_unc = 0, 0, 0
 
-            if sentence_embeds is not None and len(sentence_embeds) > 0 and proto_embeds is not None:
+            if (
+                sentence_embeds is not None
+                and len(sentence_embeds) > 0
+                and proto_embeds is not None
+            ):
                 # Cosine similarities matrix: (num_sentences, num_prototypes)
                 sim_matrix = np.dot(sentence_embeds, proto_embeds.T)
                 max_sim_per_sentence = np.max(sim_matrix, axis=1)
@@ -124,7 +172,9 @@ class FNCSEngine:
                 relevant_indices = np.where(max_sim_per_sentence >= 0.32)[0]
                 if len(relevant_indices) > 0:
                     # Sort by relevance descending
-                    sorted_rel = relevant_indices[np.argsort(-max_sim_per_sentence[relevant_indices])][:4]
+                    sorted_rel = relevant_indices[
+                        np.argsort(-max_sim_per_sentence[relevant_indices])
+                    ][:4]
                     tones = []
                     sim_weights = []
 

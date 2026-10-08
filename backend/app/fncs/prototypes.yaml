@@ -1,104 +1,181 @@
+# Financial-Narrative Contradiction Score (FNCS) Prototype Taxonomy
+# Contains (A) Project Spec Core Narrative Categories and (B) Forensic Accounting Deception Categories
+
 categories:
+  growth:
+    name: "GROWTH"
+    weight: 0.16
+    numeric_indicators:
+      - name: "beneish_sgi"
+        direction: 1.0 # higher sales growth index
+      - name: "sales_to_receivables"
+        direction: 1.0 # healthy turnover
+    prototypes:
+      - "We experienced strong organic growth and expanded our commercial market presence across key operating segments."
+      - "Revenue growth accelerated year over year, driven by expanded product distribution and market share gains."
+      - "Our core businesses generated solid revenue expansion aligned with our multi-year strategic growth targets."
+      - "Top-line performance reflected robust volume increases and new client account acquisitions."
+
+  profitability:
+    name: "PROFITABILITY"
+    weight: 0.16
+    numeric_indicators:
+      - name: "operating_margin"
+        direction: 1.0 # higher margin is positive
+      - name: "beneish_gmi"
+        direction: -1.0 # GMI > 1 indicates gross margin deterioration
+    prototypes:
+      - "Operating margins expanded significantly due to strict cost discipline and pricing power across premium product lines."
+      - "Gross profitability improved following manufacturing efficiencies and supply chain optimization initiatives."
+      - "Net operating earnings reached record levels, demonstrating strong operational leverage and pricing execution."
+      - "Profitability metrics remained highly resilient despite broader macroeconomic and inflationary headwinds."
+
+  liquidity:
+    name: "LIQUIDITY"
+    weight: 0.14
+    numeric_indicators:
+      - name: "current_ratio"
+        direction: 1.0 # healthy short-term liquidity
+    prototypes:
+      - "We maintain substantial liquid funds, strong working capital, and full borrowing availability under our credit facility."
+      - "Our cash reserves and committed revolving credit lines provide ample liquidity to satisfy all ongoing operating needs."
+      - "Working capital management yielded solid liquidity buffer, ensuring immediate coverage of short-term obligations."
+      - "Management believes available cash and operational cash flow will comfortably satisfy liquidity needs for the foreseeable future."
+
+  demand:
+    name: "DEMAND"
+    weight: 0.14
+    numeric_indicators:
+      - name: "asset_turnover"
+        direction: 1.0 # asset turnover efficiency
+      - name: "sales_to_receivables"
+        direction: 1.0 # commercial receivables collection speed
+    prototypes:
+      - "Customer demand remained exceptionally robust across all geographic regions, supporting elevated order book backlogs."
+      - "End-market demand accelerated, resulting in higher order volumes, shipment frequency, and commercial inquiries."
+      - "We observed broad-based client demand that drove high capacity utilization throughout our manufacturing footprint."
+      - "Strong consumer and enterprise demand bolstered commercial adoption of our core product portfolio."
+
+  cash_flow:
+    name: "CASH FLOW"
+    weight: 0.16
+    numeric_indicators:
+      - name: "cfo_to_assets"
+        direction: 1.0 # operating cash flow to total assets
+      - name: "beneish_tata"
+        direction: -1.0 # high accruals relative to assets indicate poor cash flow conversion
+    prototypes:
+      - "Operating cash generation remained strong, fully funding capital investments and debt reduction commitments."
+      - "Cash flow from operations increased substantially, reflecting disciplined working capital conversion and high cash collections."
+      - "We generated healthy operating cash flow that supported discretionary reinvestment and returned capital to shareholders."
+      - "Operational cash flows provided exceptional self-funding capability and enhanced our balance sheet flexibility."
+
+  risk:
+    name: "RISK"
+    weight: 0.12
+    numeric_indicators:
+      - name: "debt_to_equity"
+        direction: -1.0 # high leverage is elevated risk
+      - name: "graph_anomaly_score"
+        direction: -1.0 # high related party anomaly is elevated risk
+    prototypes:
+      - "Our comprehensive enterprise risk management programs actively mitigate financial, operational, and credit hazards."
+      - "We maintain conservative leverage ratios and disciplined risk limits to insulate operations from market volatility."
+      - "Hedging strategies and conservative liquidity buffers effectively shield the company against interest rate and counterparty risks."
+      - "Balance sheet leverage remains prudently managed well within debt covenant thresholds and internal risk tolerances."
+
+  outlook:
+    name: "OUTLOOK"
+    weight: 0.12
+    numeric_indicators:
+      - name: "capex_to_assets"
+        direction: 1.0 # forward capital commitment
+    prototypes:
+      - "Management maintains a confident forward-looking outlook for sustained revenue growth and operational execution."
+      - "We anticipate favorable commercial conditions, expanding order backlogs, and positive earnings momentum in the coming year."
+      - "Our business pipeline and strategic investments position the company exceptionally well for upcoming fiscal periods."
+      - "Forward indicators support our constructive multi-year outlook and positive financial guidance."
+
+# Addition: Detailed Forensic Accounting Deception Categories
+accounting_deception_categories:
   revenue_recognition:
     name: "Revenue Recognition & Receivables"
     weight: 0.20
     numeric_indicators:
       - name: "beneish_dsri"
-        direction: -1.0 # higher DSRI is red flag (days sales receivables index)
+        direction: -1.0
       - name: "beneish_sgi"
-        direction: 1.0 # sales growth
-      - name: "sales_to_receivables"
-        direction: 1.0 # higher turnover is positive
+        direction: 1.0
     prototypes:
       - "We recognized substantial revenue growth from our primary product lines and customer contracts."
       - "Sales increased significantly across key segments driven by high customer demand and shipments."
-      - "The timing of revenue recognition and trade receivables collections aligned with standard commercial terms."
-      - "Accounts receivable increased proportionally with expanded sales volume and billing cycles."
-
   inventory_valuation:
     name: "Inventory Valuation & Cost of Sales"
     weight: 0.15
     numeric_indicators:
       - name: "inventory_to_assets"
-        direction: -1.0 # sudden inventory bloat is negative
+        direction: -1.0
       - name: "asset_turnover"
-        direction: 1.0 # higher turnover is efficient
+        direction: 1.0
     prototypes:
       - "Inventory levels reflect expected seasonal demand and production planning requirements."
       - "We regularly evaluate inventory carrying values for obsolescence and lower of cost or net realizable value."
-      - "Finished goods turnover remained consistent with planned manufacturing cycles and supply chain capacity."
-      - "Raw materials and work in progress were managed to meet anticipated order fulfillment."
-
   reserve_manipulation:
     name: "Reserve Manipulation & Accrual Quality"
     weight: 0.15
     numeric_indicators:
       - name: "beneish_tata"
-        direction: -1.0 # high total accruals to total assets is aggressive
+        direction: -1.0
       - name: "accruals_bs_to_assets"
-        direction: -1.0 # high balance sheet accruals is aggressive
+        direction: -1.0
     prototypes:
       - "We maintain an allowance for doubtful accounts and credit losses based on historical collection trends."
       - "Management reviewed accruals, contingent liabilities, and warranty reserves for accounting adequacy."
-      - "Restructuring charges and reserve adjustments were recorded in accordance with established GAAP policies."
-      - "Provisions for loan losses and contract contingencies were established based on objective risk models."
-
   capitalized_expenses:
     name: "Capitalized Expenses & Asset Quality"
     weight: 0.15
     numeric_indicators:
       - name: "beneish_aqi"
-        direction: -1.0 # asset quality index > 1 indicates deferred expense capitalization
+        direction: -1.0
       - name: "beneish_depi"
-        direction: -1.0 # depreciation rate slowdown indicates aggressive accounting
+        direction: -1.0
       - name: "capex_to_assets"
-        direction: 1.0 # productive investment
+        direction: 1.0
     prototypes:
       - "Capital expenditures were directed toward expanding manufacturing facilities and technological infrastructure."
       - "Property, plant, and equipment depreciation schedules reflect the useful economic lives of productive assets."
-      - "Software development and intangible assets were capitalized pursuant to internal use capitalization criteria."
-      - "Maintenance and routine repair expenses were charged to operations as incurred."
-
   related_party:
     name: "Related-Party Transactions & Opacity"
     weight: 0.10
     numeric_indicators:
       - name: "graph_anomaly_score"
-        direction: -1.0 # high graph anomaly is red flag
+        direction: -1.0
       - name: "num_undisclosed_or_shell"
-        direction: -1.0 # high shell count is red flag
+        direction: -1.0
     prototypes:
       - "Transactions with affiliates and related entities were conducted on terms equivalent to arms-length dealings."
       - "Executive officers and directors did not receive loans or non-standard benefits from affiliated entities."
-      - "Advisory agreements and management fees paid to related parties were approved by the independent audit committee."
-      - "Agreements with related entities were executed in the ordinary course of business."
-
   governance_executive:
     name: "Executive Turnover & Governance"
     weight: 0.10
     numeric_indicators:
       - name: "beneish_sgai"
-        direction: -1.0 # SGA expenses outpacing sales or executive overhead bloat
+        direction: -1.0
       - name: "operating_margin"
-        direction: 1.0 # margin strength
+        direction: 1.0
     prototypes:
       - "The audit committee maintained active oversight of internal financial reporting controls and procedures."
       - "Executive compensation and performance incentives were closely aligned with audited operational milestones."
-      - "We evaluated the effectiveness of disclosure controls and internal control over financial reporting."
-      - "Corporate governance policies ensure independent board supervision and strict compliance standards."
-
   going_concern:
     name: "Going Concern & Liquidity Strain"
     weight: 0.15
     numeric_indicators:
       - name: "cfo_to_assets"
-        direction: 1.0 # positive operating cash flow
+        direction: 1.0
       - name: "current_ratio"
-        direction: 1.0 # healthy liquidity
+        direction: 1.0
       - name: "debt_to_equity"
-        direction: -1.0 # excessive leverage is distress
+        direction: -1.0
     prototypes:
       - "Operating cash flows and available credit facilities provide sufficient liquidity to fund ongoing operations."
       - "We believe cash generated from operations will satisfy working capital and debt service requirements."
-      - "The company has adequate capital resources to meet its obligations and commitments over the next twelve months."
-      - "Our credit facilities and cash reserves provide robust financial flexibility."
