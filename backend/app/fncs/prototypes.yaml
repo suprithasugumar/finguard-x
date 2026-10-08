@@ -1,0 +1,104 @@
+categories:
+  revenue_recognition:
+    name: "Revenue Recognition & Receivables"
+    weight: 0.20
+    numeric_indicators:
+      - name: "beneish_dsri"
+        direction: -1.0 # higher DSRI is red flag (days sales receivables index)
+      - name: "beneish_sgi"
+        direction: 1.0 # sales growth
+      - name: "sales_to_receivables"
+        direction: 1.0 # higher turnover is positive
+    prototypes:
+      - "We recognized substantial revenue growth from our primary product lines and customer contracts."
+      - "Sales increased significantly across key segments driven by high customer demand and shipments."
+      - "The timing of revenue recognition and trade receivables collections aligned with standard commercial terms."
+      - "Accounts receivable increased proportionally with expanded sales volume and billing cycles."
+
+  inventory_valuation:
+    name: "Inventory Valuation & Cost of Sales"
+    weight: 0.15
+    numeric_indicators:
+      - name: "inventory_to_assets"
+        direction: -1.0 # sudden inventory bloat is negative
+      - name: "asset_turnover"
+        direction: 1.0 # higher turnover is efficient
+    prototypes:
+      - "Inventory levels reflect expected seasonal demand and production planning requirements."
+      - "We regularly evaluate inventory carrying values for obsolescence and lower of cost or net realizable value."
+      - "Finished goods turnover remained consistent with planned manufacturing cycles and supply chain capacity."
+      - "Raw materials and work in progress were managed to meet anticipated order fulfillment."
+
+  reserve_manipulation:
+    name: "Reserve Manipulation & Accrual Quality"
+    weight: 0.15
+    numeric_indicators:
+      - name: "beneish_tata"
+        direction: -1.0 # high total accruals to total assets is aggressive
+      - name: "accruals_bs_to_assets"
+        direction: -1.0 # high balance sheet accruals is aggressive
+    prototypes:
+      - "We maintain an allowance for doubtful accounts and credit losses based on historical collection trends."
+      - "Management reviewed accruals, contingent liabilities, and warranty reserves for accounting adequacy."
+      - "Restructuring charges and reserve adjustments were recorded in accordance with established GAAP policies."
+      - "Provisions for loan losses and contract contingencies were established based on objective risk models."
+
+  capitalized_expenses:
+    name: "Capitalized Expenses & Asset Quality"
+    weight: 0.15
+    numeric_indicators:
+      - name: "beneish_aqi"
+        direction: -1.0 # asset quality index > 1 indicates deferred expense capitalization
+      - name: "beneish_depi"
+        direction: -1.0 # depreciation rate slowdown indicates aggressive accounting
+      - name: "capex_to_assets"
+        direction: 1.0 # productive investment
+    prototypes:
+      - "Capital expenditures were directed toward expanding manufacturing facilities and technological infrastructure."
+      - "Property, plant, and equipment depreciation schedules reflect the useful economic lives of productive assets."
+      - "Software development and intangible assets were capitalized pursuant to internal use capitalization criteria."
+      - "Maintenance and routine repair expenses were charged to operations as incurred."
+
+  related_party:
+    name: "Related-Party Transactions & Opacity"
+    weight: 0.10
+    numeric_indicators:
+      - name: "graph_anomaly_score"
+        direction: -1.0 # high graph anomaly is red flag
+      - name: "num_undisclosed_or_shell"
+        direction: -1.0 # high shell count is red flag
+    prototypes:
+      - "Transactions with affiliates and related entities were conducted on terms equivalent to arms-length dealings."
+      - "Executive officers and directors did not receive loans or non-standard benefits from affiliated entities."
+      - "Advisory agreements and management fees paid to related parties were approved by the independent audit committee."
+      - "Agreements with related entities were executed in the ordinary course of business."
+
+  governance_executive:
+    name: "Executive Turnover & Governance"
+    weight: 0.10
+    numeric_indicators:
+      - name: "beneish_sgai"
+        direction: -1.0 # SGA expenses outpacing sales or executive overhead bloat
+      - name: "operating_margin"
+        direction: 1.0 # margin strength
+    prototypes:
+      - "The audit committee maintained active oversight of internal financial reporting controls and procedures."
+      - "Executive compensation and performance incentives were closely aligned with audited operational milestones."
+      - "We evaluated the effectiveness of disclosure controls and internal control over financial reporting."
+      - "Corporate governance policies ensure independent board supervision and strict compliance standards."
+
+  going_concern:
+    name: "Going Concern & Liquidity Strain"
+    weight: 0.15
+    numeric_indicators:
+      - name: "cfo_to_assets"
+        direction: 1.0 # positive operating cash flow
+      - name: "current_ratio"
+        direction: 1.0 # healthy liquidity
+      - name: "debt_to_equity"
+        direction: -1.0 # excessive leverage is distress
+    prototypes:
+      - "Operating cash flows and available credit facilities provide sufficient liquidity to fund ongoing operations."
+      - "We believe cash generated from operations will satisfy working capital and debt service requirements."
+      - "The company has adequate capital resources to meet its obligations and commitments over the next twelve months."
+      - "Our credit facilities and cash reserves provide robust financial flexibility."
