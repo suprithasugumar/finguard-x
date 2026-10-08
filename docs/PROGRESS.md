@@ -29,6 +29,10 @@ Progress log tracking autonomous completion across Stages 1–6.
 - **Evidence**: Top factors and plain-language summaries verified across multiple registrants (e.g. CIK 0000004904, CIK 0000007084) linking specific accounting ratios to narrative/network discordance.
 - **Known Gaps**: Explanations for company-years lacking text or graphs attribute risk primarily to numeric and FNCS signals; flagged as review priority triage, not proof.
 - **Artifacts**: Populated company_year_explanations table via migration 005_explanations; summary serialized to data/processed/stage4_explanations_summary.json.
-
-
+## Stage 5: FastAPI Backend & 3-Page Forensic Dashboard UI (Done)
+- **Done**: Built 8 REST endpoints in FastAPI (`/api/companies`, `/api/companies/{id}/risk`, `/financials`, `/narrative`, `/graph`, `/explanation`, `/models/results`, `/dataset/stats`) and 3-page React/Vite/Tailwind UI.
+- **Counts**: 8/8 API endpoints serving live DB records; 3 pages (Dashboard & Ablation, Company Search with live debounce, Company Risk Profile with 5 forensic tabs); 0 placeholders.
+- **Evidence**: Verified all 8 endpoints return HTTP 200 with calibrated risk scores, Beneish components, drift pairs, NetworkX graph edges, and TreeSHAP attributions; Vite production bundle built (201 kB JS, 22 kB CSS).
+- **Known Gaps**: Headless Playwright driver failed to download due to upstream CDN 404 on Windows; UI bundle validated via Vite compiler and static mount on FastAPI port 8000.
+- **Artifacts**: `backend/app/api/endpoints.py`, `backend/app/main.py`, `frontend/src/*`, mounted on `http://127.0.0.1:8000/`.
 
