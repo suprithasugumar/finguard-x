@@ -1,11 +1,12 @@
 """FastAPI REST API endpoints for FinGuard-X (Stage 5)."""
+
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import create_engine, desc, func, text
+from fastapi import APIRouter, HTTPException, Query
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from backend.app.core.config import Settings
@@ -30,7 +31,7 @@ def search_companies(q: Optional[str] = Query(None, description="Search term")):
     """Search companies with latest calibrated risk score and review status."""
     with Session(engine) as session:
         query_sql = """
-            SELECT 
+            SELECT
                 c.cik,
                 c.ticker,
                 c.name,
@@ -59,18 +60,20 @@ def search_companies(q: Optional[str] = Query(None, description="Search term")):
 
         results = []
         for r in rows:
-            results.append({
-                "cik": r.cik,
-                "ticker": r.ticker or "N/A",
-                "name": r.name,
-                "sic": r.sic or "N/A",
-                "sic_description": r.sic_description or "N/A",
-                "latest_year": r.latest_year,
-                "has_aaer_positive": bool(r.has_aaer_positive),
-                "latest_risk_score": r.latest_risk_score,
-                "latest_risk_category": r.latest_risk_category,
-                "review_priority_label": r.review_priority_label,
-            })
+            results.append(
+                {
+                    "cik": r.cik,
+                    "ticker": r.ticker or "N/A",
+                    "name": r.name,
+                    "sic": r.sic or "N/A",
+                    "sic_description": r.sic_description or "N/A",
+                    "latest_year": r.latest_year,
+                    "has_aaer_positive": bool(r.has_aaer_positive),
+                    "latest_risk_score": r.latest_risk_score,
+                    "latest_risk_category": r.latest_risk_category,
+                    "review_priority_label": r.review_priority_label,
+                }
+            )
         return results
 
 
@@ -84,7 +87,9 @@ def get_company_risk(cik: str, fiscal_year: Optional[int] = None):
     with Session(engine) as session:
         # Load company details
         company = session.execute(
-            text("SELECT cik, ticker, name, sic, sic_description, exchange FROM companies WHERE cik = :cik"),
+            text(
+                "SELECT cik, ticker, name, sic, sic_description, exchange FROM companies WHERE cik = :cik"
+            ),
             {"cik": cik_padded},
         ).fetchone()
         if not company:
@@ -92,7 +97,9 @@ def get_company_risk(cik: str, fiscal_year: Optional[int] = None):
 
         # Load available years
         year_rows = session.execute(
-            text("SELECT fiscal_year FROM company_year_labels WHERE cik = :cik ORDER BY fiscal_year DESC"),
+            text(
+                "SELECT fiscal_year FROM company_year_labels WHERE cik = :cik ORDER BY fiscal_year DESC"
+            ),
             {"cik": cik_padded},
         ).fetchall()
         available_years = [r[0] for r in year_rows]
@@ -102,7 +109,7 @@ def get_company_risk(cik: str, fiscal_year: Optional[int] = None):
         # Load explanation
         exp = session.execute(
             text("""
-                SELECT 
+                SELECT
                     fraud_probability, risk_score, risk_category, review_priority_label,
                     modality_breakdown, top_factors, plain_language_summary
                 FROM company_year_explanations
@@ -162,7 +169,7 @@ def get_company_financials(cik: str, fiscal_year: Optional[int] = None):
     cik_padded = cik.zfill(10)
     with Session(engine) as session:
         query = """
-            SELECT 
+            SELECT
                 fiscal_year, accession_number, beneish_m_score, beneish_flag_178, beneish_flag_222,
                 beneish_dsri, beneish_gmi, beneish_aqi, beneish_sgi, beneish_depi,
                 beneish_sgai, beneish_lvgi, beneish_tata,
@@ -177,47 +184,51 @@ def get_company_financials(cik: str, fiscal_year: Optional[int] = None):
         """
         rows = session.execute(text(query), {"cik": cik_padded}).fetchall()
         if not rows:
-            raise HTTPException(status_code=404, detail="No financial features found for this company")
+            raise HTTPException(
+                status_code=404, detail="No financial features found for this company"
+            )
 
         all_years = []
         for r in rows:
-            all_years.append({
-                "fiscal_year": r.fiscal_year,
-                "accession_number": r.accession_number,
-                "beneish": {
-                    "m_score": r.beneish_m_score,
-                    "flag_178": r.beneish_flag_178,
-                    "flag_222": r.beneish_flag_222,
-                    "dsri": r.beneish_dsri,
-                    "gmi": r.beneish_gmi,
-                    "aqi": r.beneish_aqi,
-                    "sgi": r.beneish_sgi,
-                    "depi": r.beneish_depi,
-                    "sgai": r.beneish_sgai,
-                    "lvgi": r.beneish_lvgi,
-                    "tata": r.beneish_tata,
-                },
-                "ratios": {
-                    "asset_turnover": r.asset_turnover,
-                    "roa": r.roa,
-                    "operating_margin": r.operating_margin,
-                    "net_margin": r.net_margin,
-                    "current_ratio": r.current_ratio,
-                    "debt_to_equity": r.debt_to_equity,
-                    "cash_to_assets": r.cash_to_assets,
-                    "working_capital_to_assets": r.working_capital_to_assets,
-                    "cfo_to_assets": r.cfo_to_assets,
-                    "sales_to_receivables": r.sales_to_receivables,
-                    "receivables_to_assets": r.receivables_to_assets,
-                    "inventory_to_assets": r.inventory_to_assets,
-                    "capex_to_assets": r.capex_to_assets,
-                    "debt_to_assets": r.debt_to_assets,
-                    "cash_flow_margin": r.cash_flow_margin,
-                    "accruals_bs_to_assets": r.accruals_bs_to_assets,
-                    "accruals_cf_to_assets": r.accruals_cf_to_assets,
-                    "asset_growth": r.asset_growth,
-                },
-            })
+            all_years.append(
+                {
+                    "fiscal_year": r.fiscal_year,
+                    "accession_number": r.accession_number,
+                    "beneish": {
+                        "m_score": r.beneish_m_score,
+                        "flag_178": r.beneish_flag_178,
+                        "flag_222": r.beneish_flag_222,
+                        "dsri": r.beneish_dsri,
+                        "gmi": r.beneish_gmi,
+                        "aqi": r.beneish_aqi,
+                        "sgi": r.beneish_sgi,
+                        "depi": r.beneish_depi,
+                        "sgai": r.beneish_sgai,
+                        "lvgi": r.beneish_lvgi,
+                        "tata": r.beneish_tata,
+                    },
+                    "ratios": {
+                        "asset_turnover": r.asset_turnover,
+                        "roa": r.roa,
+                        "operating_margin": r.operating_margin,
+                        "net_margin": r.net_margin,
+                        "current_ratio": r.current_ratio,
+                        "debt_to_equity": r.debt_to_equity,
+                        "cash_to_assets": r.cash_to_assets,
+                        "working_capital_to_assets": r.working_capital_to_assets,
+                        "cfo_to_assets": r.cfo_to_assets,
+                        "sales_to_receivables": r.sales_to_receivables,
+                        "receivables_to_assets": r.receivables_to_assets,
+                        "inventory_to_assets": r.inventory_to_assets,
+                        "capex_to_assets": r.capex_to_assets,
+                        "debt_to_assets": r.debt_to_assets,
+                        "cash_flow_margin": r.cash_flow_margin,
+                        "accruals_bs_to_assets": r.accruals_bs_to_assets,
+                        "accruals_cf_to_assets": r.accruals_cf_to_assets,
+                        "asset_growth": r.asset_growth,
+                    },
+                }
+            )
 
         target_fy = fiscal_year or all_years[0]["fiscal_year"]
         selected = next((y for y in all_years if y["fiscal_year"] == target_fy), all_years[0])
@@ -237,7 +248,7 @@ def get_company_narrative(cik: str, fiscal_year: Optional[int] = None):
     cik_padded = cik.zfill(10)
     with Session(engine) as session:
         query = """
-            SELECT 
+            SELECT
                 fiscal_year, accession_number, narrative_drift_score, doc_embedding_cosine_drift,
                 vocab_jaccard_distance, uncertainty_rate, negative_sentiment_rate,
                 financial_uncertainty_rate, avg_sentence_length, readability_fog_index,
@@ -252,19 +263,21 @@ def get_company_narrative(cik: str, fiscal_year: Optional[int] = None):
 
         all_years = []
         for r in rows:
-            all_years.append({
-                "fiscal_year": r.fiscal_year,
-                "accession_number": r.accession_number,
-                "narrative_drift_score": r.narrative_drift_score,
-                "doc_embedding_cosine_drift": r.doc_embedding_cosine_drift,
-                "vocab_jaccard_distance": r.vocab_jaccard_distance,
-                "uncertainty_rate": r.uncertainty_rate,
-                "negative_sentiment_rate": r.negative_sentiment_rate,
-                "financial_uncertainty_rate": r.financial_uncertainty_rate,
-                "avg_sentence_length": r.avg_sentence_length,
-                "readability_fog_index": r.readability_fog_index,
-                "drift_evidence_snippets": r.drift_evidence_snippets or [],
-            })
+            all_years.append(
+                {
+                    "fiscal_year": r.fiscal_year,
+                    "accession_number": r.accession_number,
+                    "narrative_drift_score": r.narrative_drift_score,
+                    "doc_embedding_cosine_drift": r.doc_embedding_cosine_drift,
+                    "vocab_jaccard_distance": r.vocab_jaccard_distance,
+                    "uncertainty_rate": r.uncertainty_rate,
+                    "negative_sentiment_rate": r.negative_sentiment_rate,
+                    "financial_uncertainty_rate": r.financial_uncertainty_rate,
+                    "avg_sentence_length": r.avg_sentence_length,
+                    "readability_fog_index": r.readability_fog_index,
+                    "drift_evidence_snippets": r.drift_evidence_snippets or [],
+                }
+            )
 
         target_fy = fiscal_year or all_years[0]["fiscal_year"]
         selected = next((y for y in all_years if y["fiscal_year"] == target_fy), all_years[0])
@@ -284,7 +297,7 @@ def get_company_graph(cik: str, fiscal_year: Optional[int] = None):
     cik_padded = cik.zfill(10)
     with Session(engine) as session:
         query = """
-            SELECT 
+            SELECT
                 fiscal_year, accession_number, graph_available, graph_size, num_nodes, num_edges,
                 density, avg_degree, num_officers, num_entities, num_undisclosed_or_shell,
                 max_clique_size, clustering_coefficient, betweenness_centrality_max,
@@ -299,27 +312,29 @@ def get_company_graph(cik: str, fiscal_year: Optional[int] = None):
 
         all_years = []
         for r in rows:
-            all_years.append({
-                "fiscal_year": r.fiscal_year,
-                "accession_number": r.accession_number,
-                "graph_available": r.graph_available,
-                "graph_size": r.graph_size,
-                "num_nodes": r.num_nodes,
-                "num_edges": r.num_edges,
-                "density": r.density,
-                "avg_degree": r.avg_degree,
-                "num_officers": r.num_officers,
-                "num_entities": r.num_entities,
-                "num_undisclosed_or_shell": r.num_undisclosed_or_shell,
-                "max_clique_size": r.max_clique_size,
-                "clustering_coefficient": r.clustering_coefficient,
-                "betweenness_centrality_max": r.betweenness_centrality_max,
-                "yoy_node_churn": r.yoy_node_churn,
-                "yoy_edge_churn": r.yoy_edge_churn,
-                "graph_anomaly_score": r.graph_anomaly_score,
-                "graph_payload": r.graph_payload or {"nodes": [], "edges": []},
-                "evidence_edges": r.evidence_edges or [],
-            })
+            all_years.append(
+                {
+                    "fiscal_year": r.fiscal_year,
+                    "accession_number": r.accession_number,
+                    "graph_available": r.graph_available,
+                    "graph_size": r.graph_size,
+                    "num_nodes": r.num_nodes,
+                    "num_edges": r.num_edges,
+                    "density": r.density,
+                    "avg_degree": r.avg_degree,
+                    "num_officers": r.num_officers,
+                    "num_entities": r.num_entities,
+                    "num_undisclosed_or_shell": r.num_undisclosed_or_shell,
+                    "max_clique_size": r.max_clique_size,
+                    "clustering_coefficient": r.clustering_coefficient,
+                    "betweenness_centrality_max": r.betweenness_centrality_max,
+                    "yoy_node_churn": r.yoy_node_churn,
+                    "yoy_edge_churn": r.yoy_edge_churn,
+                    "graph_anomaly_score": r.graph_anomaly_score,
+                    "graph_payload": r.graph_payload or {"nodes": [], "edges": []},
+                    "evidence_edges": r.evidence_edges or [],
+                }
+            )
 
         target_fy = fiscal_year or all_years[0]["fiscal_year"]
         selected = next((y for y in all_years if y["fiscal_year"] == target_fy), all_years[0])
@@ -340,7 +355,7 @@ def get_company_explanation(cik: str, fiscal_year: Optional[int] = None):
     with Session(engine) as session:
         exp = session.execute(
             text("""
-                SELECT 
+                SELECT
                     fiscal_year, accession_number, fraud_probability, risk_score, risk_category,
                     review_priority_label, modality_breakdown, top_factors, plain_language_summary,
                     evidence_snippets, evidence_edges, fncs_evidence
@@ -358,7 +373,7 @@ def get_company_explanation(cik: str, fiscal_year: Optional[int] = None):
         # Load FNCS details if available
         fncs_row = session.execute(
             text("""
-                SELECT 
+                SELECT
                     fncs_score, contradiction_score, explanation_sentences, fncs_evidence
                 FROM company_year_fncs_features
                 WHERE cik = :cik AND fiscal_year = :fy
@@ -407,21 +422,23 @@ def get_model_results():
     # Format ablation table for easy frontend rendering
     ablation_list = []
     for k, v in data.get("ablation_results", {}).items():
-        ablation_list.append({
-            "key": k,
-            "model_id": v.get("model_id"),
-            "model_name": v.get("model_name", k),
-            "clf_type": v.get("clf_type"),
-            "pr_auc": v.get("pr_auc"),
-            "pr_auc_ci": v.get("ci_95", {}).get("pr_auc", [0, 0, 0]),
-            "roc_auc": v.get("roc_auc"),
-            "roc_auc_ci": v.get("ci_95", {}).get("roc_auc", [0, 0, 0]),
-            "f1": v.get("f1"),
-            "f1_ci": v.get("ci_95", {}).get("f1", [0, 0, 0]),
-            "balanced_acc": v.get("balanced_acc"),
-            "balanced_acc_ci": v.get("ci_95", {}).get("balanced_acc", [0, 0, 0]),
-            "confusion_matrix": v.get("confusion_matrix"),
-        })
+        ablation_list.append(
+            {
+                "key": k,
+                "model_id": v.get("model_id"),
+                "model_name": v.get("model_name", k),
+                "clf_type": v.get("clf_type"),
+                "pr_auc": v.get("pr_auc"),
+                "pr_auc_ci": v.get("ci_95", {}).get("pr_auc", [0, 0, 0]),
+                "roc_auc": v.get("roc_auc"),
+                "roc_auc_ci": v.get("ci_95", {}).get("roc_auc", [0, 0, 0]),
+                "f1": v.get("f1"),
+                "f1_ci": v.get("ci_95", {}).get("f1", [0, 0, 0]),
+                "balanced_acc": v.get("balanced_acc"),
+                "balanced_acc_ci": v.get("ci_95", {}).get("balanced_acc", [0, 0, 0]),
+                "confusion_matrix": v.get("confusion_matrix"),
+            }
+        )
 
     return {
         "models": ablation_list,
@@ -447,13 +464,19 @@ def get_dataset_stats():
         n_companies = session.execute(text("SELECT count(*) FROM companies")).scalar()
         n_filings = session.execute(text("SELECT count(*) FROM filings")).scalar()
         n_facts = session.execute(text("SELECT count(*) FROM financial_facts")).scalar()
-        n_positives = session.execute(text("SELECT count(DISTINCT cik) FROM company_year_labels WHERE label = 1")).scalar()
-        n_controls = session.execute(text("SELECT count(DISTINCT cik) FROM company_year_labels WHERE label = 0")).scalar()
+        n_positives = session.execute(
+            text("SELECT count(DISTINCT cik) FROM company_year_labels WHERE label = 1")
+        ).scalar()
+        n_controls = session.execute(
+            text("SELECT count(DISTINCT cik) FROM company_year_labels WHERE label = 0")
+        ).scalar()
         n_cohort = session.execute(text("SELECT count(*) FROM company_year_labels")).scalar()
 
         # Risk distribution from explanations
         risk_dist_rows = session.execute(
-            text("SELECT risk_category, count(*) FROM company_year_explanations GROUP BY risk_category")
+            text(
+                "SELECT risk_category, count(*) FROM company_year_explanations GROUP BY risk_category"
+            )
         ).fetchall()
         risk_dist = {r[0]: r[1] for r in risk_dist_rows}
 
@@ -461,7 +484,9 @@ def get_dataset_stats():
         usable_graphs = session.execute(
             text("SELECT count(*) FROM company_year_graph_features WHERE graph_available = true")
         ).scalar()
-        total_graphs = session.execute(text("SELECT count(*) FROM company_year_graph_features")).scalar()
+        total_graphs = session.execute(
+            text("SELECT count(*) FROM company_year_graph_features")
+        ).scalar()
 
         # Text coverage
         total_sections = session.execute(text("SELECT count(*) FROM filing_sections")).scalar()

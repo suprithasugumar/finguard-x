@@ -36,3 +36,9 @@ Progress log tracking autonomous completion across Stages 1–6.
 - **Known Gaps**: Headless Playwright driver failed to download due to upstream CDN 404 on Windows; UI bundle validated via Vite compiler and static mount on FastAPI port 8000.
 - **Artifacts**: `backend/app/api/endpoints.py`, `backend/app/main.py`, `frontend/src/*`, mounted on `http://127.0.0.1:8000/`.
 
+## Stage 6: Documentation & Final Verification (Done)
+- **Done**: Authored comprehensive README.md (setup, run order, one-command pipeline, results table) and LIMITATIONS.md (small positive cohort, label noise, extraction errors, graph coverage, no gold set, review signals not proof).
+- **Counts**: 43/43 pytest tests passing (100%); ruff linting 100% clean; ProvenanceGuard 10,000/10,000 facts and 100% filings verified.
+- **Evidence**: Verified one-command pipeline CLI (`python scripts/run_pipeline.py pipeline`) and automated status checks; full system operable end-to-end.
+- **Known Gaps**: Native Windows Playwright binary restricted by external CDN 404; mitigated by direct headless Vite build and FastAPI static hosting.
+- **Artifacts**: `README.md`, `docs/LIMITATIONS.md`, `scripts/run_pipeline.py`, `docs/PROGRESS.md`.

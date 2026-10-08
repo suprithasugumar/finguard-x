@@ -102,6 +102,51 @@ def cmd_status(args) -> int:
     return 0
 
 
+def cmd_guard(args) -> int:
+    """Run mandatory ProvenanceGuard pre-flight audit against raw SEC bulk archives."""
+    sys.path.insert(0, str(ROOT_DIR))
+    from backend.app.core.config import get_settings
+    from backend.app.db.session import get_session_factory
+    from backend.app.ingest.provenance_guard import ProvenanceGuard, ProvenanceViolationError
+
+    settings = get_settings()
+    session = get_session_factory()()
+    try:
+        guard = ProvenanceGuard(settings.RAW_DIR, settings.PROCESSED_DIR)
+        guard.verify_all(session, fact_sample_size=10000)
+        print("ProvenanceGuard PASSED: All data verified against authentic SEC bulk archives.")
+        return 0
+    except ProvenanceViolationError as e:
+        print(f"CRITICAL: ProvenanceGuard VIOLATION: {e}", file=sys.stderr)
+        return 1
+    finally:
+        session.close()
+
+
+def cmd_pipeline(args) -> int:
+    """Run end-to-end multi-modal pipeline (guard -> graph -> fncs -> models -> explain)."""
+    steps = [
+        ("Provenance Guard", [sys.executable, "scripts/run_pipeline.py", "guard"]),
+        ("Database Migrations", [sys.executable, "scripts/run_pipeline.py", "migrate"]),
+        ("Stage 1: Knowledge Graph", [sys.executable, "scripts/populate_graph_features.py"]),
+        ("Stage 2: FNCS Features", [sys.executable, "scripts/populate_fncs_features.py"]),
+        ("Stage 3: Models & Ablation", [sys.executable, "backend/app/models/train_ablation.py"]),
+        ("Stage 4: SHAP Explanations", [sys.executable, "scripts/populate_explanations.py"]),
+    ]
+    for name, cmd in steps:
+        print(f"\n==========================================")
+        print(f" Executing: {name}")
+        print(f"==========================================")
+        res = subprocess.run(cmd, cwd=str(ROOT_DIR))
+        if res.returncode != 0:
+            print(f"Pipeline failed at step: {name}", file=sys.stderr)
+            return res.returncode
+    print("\n==========================================")
+    print(" FinGuard-X Multi-Modal Pipeline Complete!")
+    print("==========================================")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="FinGuard-X Cross-Platform CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -123,6 +168,12 @@ def main():
     # status
     subparsers.add_parser("status", help="Check pipeline status and DB connectivity")
 
+    # guard
+    subparsers.add_parser("guard", help="Run mandatory data provenance audit (fails hard on synthetic data)")
+
+    # pipeline
+    subparsers.add_parser("pipeline", help="Run full end-to-end multi-modal forensic pipeline")
+
     args = parser.parse_args()
     actions = {
         "test": cmd_test,
@@ -130,9 +181,12 @@ def main():
         "format": cmd_format,
         "migrate": cmd_migrate,
         "status": cmd_status,
+        "guard": cmd_guard,
+        "pipeline": cmd_pipeline,
     }
     sys.exit(actions[args.command](args))
 
 
 if __name__ == "__main__":
     main()
+

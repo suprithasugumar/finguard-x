@@ -1,9 +1,10 @@
 """Ablation benchmark for Models 1-9 across Logistic Regression and XGBoost with CIK-grouped stratified CV and cluster bootstrap CIs (Stage 3)."""
+
 import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.model_selection import StratifiedGroupKFold
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from xgboost import XGBClassifier
 
 # Add project root to sys.path
@@ -42,6 +43,7 @@ np.random.seed(SEED)
 # =====================================================================
 # Pure NumPy / SciPy Machine Learning Components (Immune to DLL blocks)
 # =====================================================================
+
 
 class InFoldPreprocessor:
     """Strictly in-fold imputation, 1st/99th percentile winsorization, and robust scaling."""
@@ -107,14 +109,18 @@ class RobustLogReg:
             z = np.dot(X, w) + b
             p = expit(z)
             p = np.clip(p, 1e-12, 1.0 - 1e-12)
-            loss = -np.sum(sw * (y * np.log(p) + (1.0 - y) * np.log(1.0 - p))) + 0.5 * lam * np.sum(w ** 2)
+            loss = -np.sum(sw * (y * np.log(p) + (1.0 - y) * np.log(1.0 - p))) + 0.5 * lam * np.sum(
+                w**2
+            )
             err = sw * (p - y)
             grad_w = np.dot(X.T, err) + lam * w
             grad_b = np.sum(err)
             return loss, np.append(grad_w, grad_b)
 
         init = np.zeros(n_features + 1)
-        res = minimize(loss_and_grad, init, jac=True, method="L-BFGS-B", options={"maxiter": self.max_iter})
+        res = minimize(
+            loss_and_grad, init, jac=True, method="L-BFGS-B", options={"maxiter": self.max_iter}
+        )
         self.w = res.x[:-1]
         self.b = res.x[-1]
         return self
@@ -163,32 +169,73 @@ class PlattCalibrator:
 # =====================================================================
 
 NUMERIC_FEATURES = [
-    "asset_turnover", "roa", "operating_margin", "net_margin", "current_ratio",
-    "debt_to_equity", "cash_to_assets", "working_capital_to_assets", "cfo_to_assets",
-    "sales_to_receivables", "receivables_to_assets", "inventory_to_assets",
-    "capex_to_assets", "debt_to_assets", "cash_flow_margin", "accruals_bs_to_assets",
-    "accruals_cf_to_assets", "asset_growth", "beneish_dsri", "beneish_gmi",
-    "beneish_aqi", "beneish_sgi", "beneish_depi", "beneish_sgai", "beneish_lvgi",
+    "asset_turnover",
+    "roa",
+    "operating_margin",
+    "net_margin",
+    "current_ratio",
+    "debt_to_equity",
+    "cash_to_assets",
+    "working_capital_to_assets",
+    "cfo_to_assets",
+    "sales_to_receivables",
+    "receivables_to_assets",
+    "inventory_to_assets",
+    "capex_to_assets",
+    "debt_to_assets",
+    "cash_flow_margin",
+    "accruals_bs_to_assets",
+    "accruals_cf_to_assets",
+    "asset_growth",
+    "beneish_dsri",
+    "beneish_gmi",
+    "beneish_aqi",
+    "beneish_sgi",
+    "beneish_depi",
+    "beneish_sgai",
+    "beneish_lvgi",
     "beneish_tata",
 ]
 
 TEXT_FEATURES = [
-    "narrative_drift_score", "doc_embedding_cosine_drift", "vocab_jaccard_distance",
-    "uncertainty_rate", "negative_sentiment_rate", "financial_uncertainty_rate",
-    "avg_sentence_length", "readability_fog_index",
+    "narrative_drift_score",
+    "doc_embedding_cosine_drift",
+    "vocab_jaccard_distance",
+    "uncertainty_rate",
+    "negative_sentiment_rate",
+    "financial_uncertainty_rate",
+    "avg_sentence_length",
+    "readability_fog_index",
 ]
 
 GRAPH_FEATURES = [
-    "graph_available", "graph_size", "num_nodes", "num_edges", "density",
-    "avg_degree", "num_officers", "num_entities", "num_undisclosed_or_shell",
-    "max_clique_size", "clustering_coefficient", "betweenness_centrality_max",
-    "yoy_node_churn", "yoy_edge_churn", "graph_anomaly_score",
+    "graph_available",
+    "graph_size",
+    "num_nodes",
+    "num_edges",
+    "density",
+    "avg_degree",
+    "num_officers",
+    "num_entities",
+    "num_undisclosed_or_shell",
+    "max_clique_size",
+    "clustering_coefficient",
+    "betweenness_centrality_max",
+    "yoy_node_churn",
+    "yoy_edge_churn",
+    "graph_anomaly_score",
 ]
 
 FNCS_FEATURES = [
-    "cat1_revenue_recognition", "cat2_inventory_valuation", "cat3_reserve_manipulation",
-    "cat4_capitalized_expenses", "cat5_related_party", "cat6_governance_executive",
-    "cat7_going_concern", "contradiction_score", "fncs_score",
+    "cat1_revenue_recognition",
+    "cat2_inventory_valuation",
+    "cat3_reserve_manipulation",
+    "cat4_capitalized_expenses",
+    "cat5_related_party",
+    "cat6_governance_executive",
+    "cat7_going_concern",
+    "contradiction_score",
+    "fncs_score",
 ]
 
 MODEL_SPECS = {
@@ -199,8 +246,14 @@ MODEL_SPECS = {
     5: {"name": "Model 5: Numeric + Text", "features": NUMERIC_FEATURES + TEXT_FEATURES},
     6: {"name": "Model 6: Numeric + Graph", "features": NUMERIC_FEATURES + GRAPH_FEATURES},
     7: {"name": "Model 7: Text + Graph", "features": TEXT_FEATURES + GRAPH_FEATURES},
-    8: {"name": "Model 8: Numeric + Text + Graph", "features": NUMERIC_FEATURES + TEXT_FEATURES + GRAPH_FEATURES},
-    9: {"name": "Model 9: Numeric + Text + Graph + FNCS", "features": NUMERIC_FEATURES + TEXT_FEATURES + GRAPH_FEATURES + FNCS_FEATURES},
+    8: {
+        "name": "Model 8: Numeric + Text + Graph",
+        "features": NUMERIC_FEATURES + TEXT_FEATURES + GRAPH_FEATURES,
+    },
+    9: {
+        "name": "Model 9: Numeric + Text + Graph + FNCS",
+        "features": NUMERIC_FEATURES + TEXT_FEATURES + GRAPH_FEATURES + FNCS_FEATURES,
+    },
 }
 
 
@@ -273,7 +326,9 @@ def load_dataset() -> pd.DataFrame:
         ORDER BY cyl.cik, cyl.fiscal_year ASC
     """
     df = pd.read_sql(query, engine)
-    logger.info(f"Loaded dataset: {len(df)} rows, {df['label'].sum()} positives, {len(df) - df['label'].sum()} controls.")
+    logger.info(
+        f"Loaded dataset: {len(df)} rows, {df['label'].sum()} positives, {len(df) - df['label'].sum()} controls."
+    )
     return df
 
 
@@ -391,8 +446,16 @@ def paired_bootstrap_test(
     p_val_roc = float(np.mean(np.array(diff_roc_auc) <= 0)) if diff_roc_auc else 1.0
 
     return {
-        "pr_auc_diff": {"mean": pr_diff_mean, "ci_95": (pr_ci_low, pr_ci_high), "p_value": p_val_pr},
-        "roc_auc_diff": {"mean": roc_diff_mean, "ci_95": (roc_ci_low, roc_ci_high), "p_value": p_val_roc},
+        "pr_auc_diff": {
+            "mean": pr_diff_mean,
+            "ci_95": (pr_ci_low, pr_ci_high),
+            "p_value": p_val_pr,
+        },
+        "roc_auc_diff": {
+            "mean": roc_diff_mean,
+            "ci_95": (roc_ci_low, roc_ci_high),
+            "p_value": p_val_roc,
+        },
     }
 
 
@@ -433,8 +496,20 @@ def evaluate_beneish_baseline(df: pd.DataFrame, groups: np.ndarray) -> Dict[str,
         "recall": rec_178,
         "balanced_acc": bal_178,
         "confusion_matrix": cm_178,
-        "threshold_178": {"f1": f1_178, "precision": prec_178, "recall": rec_178, "bal_acc": bal_178, "cm": cm_178},
-        "threshold_222": {"f1": f1_222, "precision": prec_222, "recall": rec_222, "bal_acc": bal_222, "cm": cm_222},
+        "threshold_178": {
+            "f1": f1_178,
+            "precision": prec_178,
+            "recall": rec_178,
+            "bal_acc": bal_178,
+            "cm": cm_178,
+        },
+        "threshold_222": {
+            "f1": f1_222,
+            "precision": prec_222,
+            "recall": rec_222,
+            "bal_acc": bal_222,
+            "cm": cm_222,
+        },
         "ci_95": ci_results,
         "oof_probabilities": m_prob.tolist(),
         "oof_predictions": pred_178.tolist(),
@@ -459,7 +534,6 @@ def run_cross_validation(
         X_train_raw = df.iloc[train_idx][feature_names].values
         y_train = y[train_idx]
         X_val_raw = df.iloc[val_idx][feature_names].values
-        y_val = y[val_idx]
 
         # 1. Strictly in-train fold Preprocessor (Imputation, Winsorization, Robust Scaling)
         prep = InFoldPreprocessor()
@@ -568,7 +642,9 @@ def run_full_ablation_and_benchmarks():
         ciks_count = len(np.unique(groups[val_idx]))
         pos_per_fold.append(pos_count)
         ctrl_per_fold.append(ctrl_count)
-        logger.info(f"Fold {fold_idx}: {pos_count} Corporate Positives, {ctrl_count} Matched Controls ({ciks_count} unique CIKs)")
+        logger.info(
+            f"Fold {fold_idx}: {pos_count} Corporate Positives, {ctrl_count} Matched Controls ({ciks_count} unique CIKs)"
+        )
 
     ablation_results = {}
 
@@ -584,7 +660,9 @@ def run_full_ablation_and_benchmarks():
 
         for clf_type in ["LogReg", "XGBoost"]:
             key = f"Model {model_id}_{clf_type}"
-            logger.info(f"Training & Evaluating {model_name} [{clf_type}] ({len(feat_names)} features)...")
+            logger.info(
+                f"Training & Evaluating {model_name} [{clf_type}] ({len(feat_names)} features)..."
+            )
             res = run_cross_validation(df, feat_names, clf_type, cv_splits)
             res["model_id"] = model_id
             res["model_name"] = model_name
@@ -606,11 +684,19 @@ def run_full_ablation_and_benchmarks():
     )
 
     # 3. FNCS Redundancy Check
-    logger.info("Executing FNCS Redundancy Check (FNCS alone, constituent correlation, permutation importance)...")
+    logger.info(
+        "Executing FNCS Redundancy Check (FNCS alone, constituent correlation, permutation importance)..."
+    )
     fncs_alone_logreg = run_cross_validation(df, FNCS_FEATURES, "LogReg", cv_splits)
     fncs_alone_xgb = run_cross_validation(df, FNCS_FEATURES, "XGBoost", cv_splits)
 
-    constituent_cols = ["beneish_dsri", "beneish_tata", "cfo_to_assets", "narrative_drift_score", "graph_anomaly_score"]
+    constituent_cols = [
+        "beneish_dsri",
+        "beneish_tata",
+        "cfo_to_assets",
+        "narrative_drift_score",
+        "graph_anomaly_score",
+    ]
     corr_results = {}
     for col in constituent_cols:
         valid = df[["fncs_score", "contradiction_score", col]].dropna()
@@ -632,14 +718,24 @@ def run_full_ablation_and_benchmarks():
     for fncs_f in FNCS_FEATURES:
         shuffled_df = df.copy()
         shuffled_df[fncs_f] = np.random.permutation(shuffled_df[fncs_f].values)
-        res_shuff = run_cross_validation(shuffled_df, MODEL_SPECS[9]["features"], "XGBoost", cv_splits)
+        res_shuff = run_cross_validation(
+            shuffled_df, MODEL_SPECS[9]["features"], "XGBoost", cv_splits
+        )
         drop = base_pr_auc - res_shuff["pr_auc"]
         perm_importances[fncs_f] = float(drop)
 
     redundancy_report = {
         "fncs_alone": {
-            "LogReg": {"pr_auc": fncs_alone_logreg["pr_auc"], "roc_auc": fncs_alone_logreg["roc_auc"], "f1": fncs_alone_logreg["f1"]},
-            "XGBoost": {"pr_auc": fncs_alone_xgb["pr_auc"], "roc_auc": fncs_alone_xgb["roc_auc"], "f1": fncs_alone_xgb["f1"]},
+            "LogReg": {
+                "pr_auc": fncs_alone_logreg["pr_auc"],
+                "roc_auc": fncs_alone_logreg["roc_auc"],
+                "f1": fncs_alone_logreg["f1"],
+            },
+            "XGBoost": {
+                "pr_auc": fncs_alone_xgb["pr_auc"],
+                "roc_auc": fncs_alone_xgb["roc_auc"],
+                "f1": fncs_alone_xgb["f1"],
+            },
         },
         "correlations": corr_results,
         "permutation_importance": perm_importances,
@@ -659,14 +755,18 @@ def run_full_ablation_and_benchmarks():
     summary_path = Path("data/processed/stage3_results_summary.json")
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     with open(summary_path, "w") as f:
-        json.dump({
-            "pos_per_fold": pos_per_fold,
-            "ctrl_per_fold": ctrl_per_fold,
-            "paired_logreg": paired_logreg,
-            "paired_xgb": paired_xgb,
-            "redundancy_report": redundancy_report,
-            "ablation_results": ablation_results,
-        }, f, indent=2)
+        json.dump(
+            {
+                "pos_per_fold": pos_per_fold,
+                "ctrl_per_fold": ctrl_per_fold,
+                "paired_logreg": paired_logreg,
+                "paired_xgb": paired_xgb,
+                "redundancy_report": redundancy_report,
+                "ablation_results": ablation_results,
+            },
+            f,
+            indent=2,
+        )
 
     logger.info("Stage 3 Models benchmark completed successfully!")
     return ablation_results
@@ -683,24 +783,36 @@ def write_results_markdown(
     """Write exhaustive docs/RESULTS.md report with all 9 models x 2 classifiers, bootstrap CIs, and redundancy checks."""
     md = []
     md.append("# FinGuard-X: Empirical Evaluation & Ablation Results (Stage 3)\n")
-    md.append("Comprehensive multi-modal benchmark across Models 1–9 with Logistic Regression and XGBoost on real SEC EDGAR disclosures.\n")
+    md.append(
+        "Comprehensive multi-modal benchmark across Models 1–9 with Logistic Regression and XGBoost on real SEC EDGAR disclosures.\n"
+    )
 
     md.append("## 1. Cross-Validation & Stratification Integrity\n")
     md.append("- **CV Scheme**: 5-Fold CIK-Grouped Stratified Cross-Validation (Seed = 42).")
     md.append("- **Zero CIK Leakage**: No registrant appears in both train and validation folds.")
-    md.append("- **Strict In-Fold Preprocessing**: Imputation, 1st/99th percentile winsorization, and robust scaling fit inside train folds only.")
-    md.append("- **Class Weights**: Balanced weights (LogReg) and scale_pos_weight (XGBoost); Platt sigmoid probability calibration applied inside folds.\n")
+    md.append(
+        "- **Strict In-Fold Preprocessing**: Imputation, 1st/99th percentile winsorization, and robust scaling fit inside train folds only."
+    )
+    md.append(
+        "- **Class Weights**: Balanced weights (LogReg) and scale_pos_weight (XGBoost); Platt sigmoid probability calibration applied inside folds.\n"
+    )
 
     md.append("| Fold | Positives (Corporate AAER) | Controls (Matched 5:1) | Total Cohort |")
     md.append("|---|---|---|---|")
     for i, (p, c) in enumerate(zip(pos_per_fold, ctrl_per_fold), 1):
         md.append(f"| Fold {i} | {p} | {c} | {p + c} |")
-    md.append(f"| **Total** | **{sum(pos_per_fold)}** | **{sum(ctrl_per_fold)}** | **{sum(pos_per_fold) + sum(ctrl_per_fold)}** |\n")
+    md.append(
+        f"| **Total** | **{sum(pos_per_fold)}** | **{sum(ctrl_per_fold)}** | **{sum(pos_per_fold) + sum(ctrl_per_fold)}** |\n"
+    )
 
     md.append("## 2. Complete Multimodal Ablation Table (Models 1–9)\n")
-    md.append("All metrics are out-of-fold pooled with 95% Confidence Intervals computed via 300 CIK-cluster bootstrap resamples.\n")
+    md.append(
+        "All metrics are out-of-fold pooled with 95% Confidence Intervals computed via 300 CIK-cluster bootstrap resamples.\n"
+    )
 
-    md.append("| Model | Classifier | PR-AUC [95% CI] | ROC-AUC [95% CI] | F1 [95% CI] | Balanced Acc [95% CI] | Confusion Matrix [TN, FP; FN, TP] |")
+    md.append(
+        "| Model | Classifier | PR-AUC [95% CI] | ROC-AUC [95% CI] | F1 [95% CI] | Balanced Acc [95% CI] | Confusion Matrix [TN, FP; FN, TP] |"
+    )
     md.append("|---|---|---|---|---|---|---|")
 
     model_keys = ["Model 1_Baseline"]
@@ -735,32 +847,56 @@ def write_results_markdown(
         )
 
     md.append("\n## 3. Paired Bootstrap Significance: Model 9 vs Model 8\n")
-    md.append("Testing incremental contribution of FNCS when added to full multimodal baseline (Numeric + Text + Graph):\n")
-    md.append(f"- **XGBoost PR-AUC Difference (Model 9 - Model 8)**: {paired_xgb['pr_auc_diff']['mean']:+.4f} (95% CI: [{paired_xgb['pr_auc_diff']['ci_95'][0]:.4f}, {paired_xgb['pr_auc_diff']['ci_95'][1]:.4f}], empirical p = {paired_xgb['pr_auc_diff']['p_value']:.4f})")
-    md.append(f"- **XGBoost ROC-AUC Difference (Model 9 - Model 8)**: {paired_xgb['roc_auc_diff']['mean']:+.4f} (95% CI: [{paired_xgb['roc_auc_diff']['ci_95'][0]:.4f}, {paired_xgb['roc_auc_diff']['ci_95'][1]:.4f}], empirical p = {paired_xgb['roc_auc_diff']['p_value']:.4f})")
-    md.append(f"- **LogReg PR-AUC Difference (Model 9 - Model 8)**: {paired_logreg['pr_auc_diff']['mean']:+.4f} (95% CI: [{paired_logreg['pr_auc_diff']['ci_95'][0]:.4f}, {paired_logreg['pr_auc_diff']['ci_95'][1]:.4f}], empirical p = {paired_logreg['pr_auc_diff']['p_value']:.4f})\n")
+    md.append(
+        "Testing incremental contribution of FNCS when added to full multimodal baseline (Numeric + Text + Graph):\n"
+    )
+    md.append(
+        f"- **XGBoost PR-AUC Difference (Model 9 - Model 8)**: {paired_xgb['pr_auc_diff']['mean']:+.4f} (95% CI: [{paired_xgb['pr_auc_diff']['ci_95'][0]:.4f}, {paired_xgb['pr_auc_diff']['ci_95'][1]:.4f}], empirical p = {paired_xgb['pr_auc_diff']['p_value']:.4f})"
+    )
+    md.append(
+        f"- **XGBoost ROC-AUC Difference (Model 9 - Model 8)**: {paired_xgb['roc_auc_diff']['mean']:+.4f} (95% CI: [{paired_xgb['roc_auc_diff']['ci_95'][0]:.4f}, {paired_xgb['roc_auc_diff']['ci_95'][1]:.4f}], empirical p = {paired_xgb['roc_auc_diff']['p_value']:.4f})"
+    )
+    md.append(
+        f"- **LogReg PR-AUC Difference (Model 9 - Model 8)**: {paired_logreg['pr_auc_diff']['mean']:+.4f} (95% CI: [{paired_logreg['pr_auc_diff']['ci_95'][0]:.4f}, {paired_logreg['pr_auc_diff']['ci_95'][1]:.4f}], empirical p = {paired_logreg['pr_auc_diff']['p_value']:.4f})\n"
+    )
 
     md.append("## 4. FNCS Redundancy Check (Mandatory Verification)\n")
     md.append("### A. FNCS Standalone Predictive Power")
-    md.append(f"- **FNCS-Only LogReg**: PR-AUC = {redundancy_report['fncs_alone']['LogReg']['pr_auc']:.4f}, ROC-AUC = {redundancy_report['fncs_alone']['LogReg']['roc_auc']:.4f}, F1 = {redundancy_report['fncs_alone']['LogReg']['f1']:.4f}")
-    md.append(f"- **FNCS-Only XGBoost**: PR-AUC = {redundancy_report['fncs_alone']['XGBoost']['pr_auc']:.4f}, ROC-AUC = {redundancy_report['fncs_alone']['XGBoost']['roc_auc']:.4f}, F1 = {redundancy_report['fncs_alone']['XGBoost']['f1']:.4f}\n")
+    md.append(
+        f"- **FNCS-Only LogReg**: PR-AUC = {redundancy_report['fncs_alone']['LogReg']['pr_auc']:.4f}, ROC-AUC = {redundancy_report['fncs_alone']['LogReg']['roc_auc']:.4f}, F1 = {redundancy_report['fncs_alone']['LogReg']['f1']:.4f}"
+    )
+    md.append(
+        f"- **FNCS-Only XGBoost**: PR-AUC = {redundancy_report['fncs_alone']['XGBoost']['pr_auc']:.4f}, ROC-AUC = {redundancy_report['fncs_alone']['XGBoost']['roc_auc']:.4f}, F1 = {redundancy_report['fncs_alone']['XGBoost']['f1']:.4f}\n"
+    )
 
     md.append("### B. Correlation with Constituent Features")
-    md.append("| Constituent Feature | FNCS Pearson r | FNCS Spearman rho | Contradiction Pearson r |")
+    md.append(
+        "| Constituent Feature | FNCS Pearson r | FNCS Spearman rho | Contradiction Pearson r |"
+    )
     md.append("|---|---|---|---|")
     for feat, stats_val in redundancy_report["correlations"].items():
-        md.append(f"| `{feat}` | {stats_val['fncs_pearson']:+.3f} | {stats_val['fncs_spearman']:+.3f} | {stats_val['contradiction_pearson']:+.3f} |")
+        md.append(
+            f"| `{feat}` | {stats_val['fncs_pearson']:+.3f} | {stats_val['fncs_spearman']:+.3f} | {stats_val['contradiction_pearson']:+.3f} |"
+        )
 
     md.append("\n### C. Permutation Feature Importance in Model 9 (PR-AUC Drop)")
     md.append("| FNCS Feature | PR-AUC Drop When Shuffled |")
     md.append("|---|---|")
-    for feat, drop in sorted(redundancy_report["permutation_importance"].items(), key=lambda x: -x[1]):
+    for feat, drop in sorted(
+        redundancy_report["permutation_importance"].items(), key=lambda x: -x[1]
+    ):
         md.append(f"| `{feat}` | {drop:+.4f} |")
 
     md.append("\n## 5. Honest Empirical Assessment")
-    md.append("1. **Beneish Baseline**: Beneish M-score exhibits near-random discrimination on modern GAAP filings (ROC-AUC ~0.53, PR-AUC ~0.13), demonstrating the need for multimodal behavioral signals.")
-    md.append("2. **Multimodal Synergy**: Adding Graph and FNCS modalities to standard financial ratios yields consistent improvements across PR-AUC and Balanced Accuracy.")
-    md.append("3. **FNCS Incremental Gain**: FNCS provides non-redundant signal beyond raw numeric and text features alone, especially in detecting optimistic disclosures masking deteriorating cash flow and working capital accruals.")
+    md.append(
+        "1. **Beneish Baseline**: Beneish M-score exhibits near-random discrimination on modern GAAP filings (ROC-AUC ~0.53, PR-AUC ~0.13), demonstrating the need for multimodal behavioral signals."
+    )
+    md.append(
+        "2. **Multimodal Synergy**: Adding Graph and FNCS modalities to standard financial ratios yields consistent improvements across PR-AUC and Balanced Accuracy."
+    )
+    md.append(
+        "3. **FNCS Incremental Gain**: FNCS provides non-redundant signal beyond raw numeric and text features alone, especially in detecting optimistic disclosures masking deteriorating cash flow and working capital accruals."
+    )
 
     with open("docs/RESULTS.md", "w", encoding="utf-8") as f:
         f.write("\n".join(md))

@@ -1,7 +1,11 @@
 """FinGuard-X FastAPI application entrypoint."""
+
 import logging
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.app.api.endpoints import router as api_router
 
@@ -32,15 +36,13 @@ def health_check():
 
 
 # Mount frontend dist static files for full single-port experience
-from pathlib import Path
-from fastapi.staticfiles import StaticFiles
-
 dist_path = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 if dist_path.exists():
     app.mount("/", StaticFiles(directory=str(dist_path), html=True), name="static")
 
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.app.main:app", host="127.0.0.1", port=8000, reload=True)
 
+    uvicorn.run("backend.app.main:app", host="127.0.0.1", port=8000, reload=True)
