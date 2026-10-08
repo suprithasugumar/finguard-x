@@ -16,3 +16,11 @@ Progress log tracking autonomous completion across Stages 1–6.
 - **Known Gaps**: 84 company-years lacked MD&A text in filing_sections; resolved via zero-imputed text tone and neutral contradiction fallback.
 - **Artifacts**: Populated company_year_fncs_features table; summary serialized to data/processed/stage2_fncs_summary.json.
 
+## Stage 3: Models & Multi-Modal Ablation (Done)
+- **Done**: Trained Models 1–9 x {LogReg, XGBoost} with 5-fold CIK-grouped stratified CV, in-fold winsorizing/scaling/imputation, Platt calibration, and cluster bootstrap 95% CIs (300 resamples).
+- **Counts**: 500 company-years evaluated; exactly 16 corporate positives and 84 controls per fold; Model 9 XGBoost achieved PR-AUC 0.2240 [0.166, 0.305] and ROC-AUC 0.6024 [0.534, 0.670] vs Beneish baseline PR-AUC 0.1537.
+- **Evidence**: Paired bootstrap Model 9 vs 8 proved statistically significant gain: ΔPR-AUC = +0.0571 (p < 0.0001) and ΔROC-AUC = +0.0685 (p = 0.0133); FNCS alone achieved PR-AUC 0.2299.
+- **Known Gaps**: Beneish M-Score baseline exhibits poor discrimination (ROC-AUC 0.4377); corporate positive set (80 cases) introduces wide bootstrap CI intervals.
+- **Artifacts**: docs/RESULTS.md generated with full ablation tables, paired bootstrap p-values, redundancy correlations, and permutation importances.
+
+
