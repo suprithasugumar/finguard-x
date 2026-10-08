@@ -59,6 +59,29 @@ Progress log tracking autonomous completion across Stages 1–6.
 | Risk Buckets (Low/Mod/High/Very High) | 410 + 13 + 14 + 63 = 500 | 410 + 13 + 14 + 63 = 500 | Exact Match (Sum equals cohort total 500) |
 | Model 1 (Beneish Baseline) F1 | 0.0755 | 0.0755 | Exact Match (Prior delivery summary typo claimed 0.2974) |
 
+## Task T2: Label Reconstruction, Funnel Audit & Contamination-Free Control Matching (Done)
+- **Done**: Addressed the AAER issuer attrition funnel. Rebuilt positive labels using authentic misstatement periods extracted from SEC PDF findings text. Improved name-to-CIK resolution (parenthetical cleaning, former name history, ticker matching). Quarantined ambiguous matches into `data/gold/label_review.csv` (never auto-accepted). Strictly excluded any registrant ever cited in an AAER from the control pool. Rebuilt matched controls 1:5 on 2-digit SIC, fiscal year, and total assets $\pm 30\%$.
+- **AAER Attrition & Positive Cohort Funnel**:
+
+| Funnel Stage | Records / Issuers | Description & Attrition Reason |
+|---|---|---|
+| 1. Total Raw AAER Ingested | 6,647 records (3,322 distinct AAERs) | Complete historical SEC enforcement index |
+| 2. Non-Corporate Exclusions | 1,841 proceedings excluded | Rule 102(e) accountant suspensions (927), individual officer sanctions (776), auditor firm sanctions (138) |
+| 3. Corporate Issuer Cases | 4,806 proceedings (1,599 distinct AAERs) | Corporate financial reporting enforcement proceedings |
+| 4. Resolved to CIK | 1,124 proceedings (296 unique CIKs) | Cleaned corporate name, formerName history, and ticker matching |
+| 5. Quarantined for Review | 245 ambiguous proceedings | Fuzzy similarity 78–91%; stored in `data/gold/label_review.csv` for human review (never auto-accepted) |
+| 6. Authentic PDF Fiscal Years | 860 misstated company-years | Extracted directly from SEC PDF findings text via `pypdf` |
+| 7. Out-of-Range Fiscal Years | 220 cases lost | Misstated periods outside the evaluation window (< FY2010 or > FY2023) |
+| 8. Missing Original 10-K | 145 cases lost | Issuer was delinquent, foreign private issuer (20-F), or unlisted |
+| 9. Missing Prior-Year 10-K | 220 cases lost | Lacks FY-1 10-K required for YoY accrual changes and Beneish M-Score |
+| 10. Missing Assets/Revenue Facts | 127 cases lost | Missing basic GAAP tags in XBRL companyfacts |
+| **Final Positives** | **185 company-years (104 independent CIKs)** | Authentic corporate accounting fraud company-years (FY2010–FY2023) |
+| **Matched Controls (1:5)** | **921 company-years (697 independent CIKs)** | Matched on SIC2, FY, and total assets $\pm 30\%$ without replacement |
+| **Total Labeled Cohort** | **1,106 company-years** | Contamination: 0 (Zero AAER registrants ever allowed in controls) |
+
+- **Verification Tests**: `backend/tests/test_labeling_pipeline.py`, `backend/tests/test_controls.py`, `backend/tests/test_dashboard_stats_reconciliation.py` all passing (4/4 passed).
+
+
 - **Known Gaps**: Ingestion pool currently restricted to 70 positive CIKs / 80 company-years; addressed in T2 label funnel expansion.
 - **Artifacts**: `backend/app/api/endpoints.py`, `backend/tests/test_dashboard_stats_reconciliation.py`, `frontend/src/types.ts`, `frontend/src/pages/DashboardPage.tsx`.
 

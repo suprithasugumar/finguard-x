@@ -57,6 +57,8 @@ class LabelingPipeline:
 
     def export_review_queue(self, review_items: List[Dict[str, Any]]) -> None:
         """Export low and medium confidence cases to data/gold/label_review.csv."""
+        if not review_items and self.review_csv_path.exists():
+            return
         self.settings.GOLD_DIR.mkdir(parents=True, exist_ok=True)
         fieldnames = [
             "cik",
@@ -65,6 +67,7 @@ class LabelingPipeline:
             "aaer_number",
             "label",
             "confidence",
+            "source",
             "rationale",
             "review_status",
             "reviewer_notes",
@@ -86,6 +89,7 @@ class LabelingPipeline:
                         "aaer_number": item.get("aaer_number", ""),
                         "label": override["label"],
                         "confidence": override["confidence"],
+                        "source": item.get("source", "aaer_release"),
                         "rationale": item["rationale"],
                         "review_status": "manual_override",
                         "reviewer_notes": override["rationale"],
@@ -100,9 +104,10 @@ class LabelingPipeline:
                         "aaer_number": item.get("aaer_number", ""),
                         "label": item.get("label", 1),
                         "confidence": item["confidence"],
+                        "source": item.get("source", "aaer_release"),
                         "rationale": item["rationale"],
-                        "review_status": "needs_review",
-                        "reviewer_notes": "",
+                        "review_status": item.get("review_status", "needs_review"),
+                        "reviewer_notes": item.get("reviewer_notes", ""),
                     }
                 )
 
@@ -150,15 +155,18 @@ class LabelingPipeline:
                 revenue_by_cik_fy[key] = fact.value
 
         # 4. Identify Enforced Firms (any AAER ever)
-        cases = session.query(AAERCase).filter(AAERCase.exclusion_reason.is_(None)).all()
-        enforced_ciks: Set[str] = {c.cik for c in cases if c.cik}
+        all_cases = session.query(AAERCase).all()
+        enforced_ciks: Set[str] = {c.cik for c in all_cases if c.cik}
+        corporate_cases = [c for c in all_cases if c.exclusion_reason is None]
 
         positives_to_insert: List[Dict[str, Any]] = []
         review_queue: List[Dict[str, Any]] = []
         unresolved_reasons: Dict[str, int] = defaultdict(int)
 
+        max_fiscal_year = 2023
+
         # 5. Process Positive Candidates
-        for case in cases:
+        for case in corporate_cases:
             if not case.cik:
                 unresolved_reasons["Missing CIK resolution"] += 1
                 continue
@@ -168,8 +176,8 @@ class LabelingPipeline:
             affected_years = case.affected_fiscal_years or []
 
             for fy in affected_years:
-                if fy < min_fiscal_year:
-                    unresolved_reasons["Pre-2010 fiscal year"] += 1
+                if fy < min_fiscal_year or fy > max_fiscal_year:
+                    unresolved_reasons[f"Out of range fiscal year ({fy})"] += 1
                     continue
 
                 key = (case.cik, fy)
@@ -231,6 +239,21 @@ class LabelingPipeline:
                     "sic": company.sic if company else "9999",
                 }
                 positives_to_insert.append(item)
+
+        # Deduplicate positives by (cik, fiscal_year) to prevent duplicate records
+        deduped_positives: Dict[Tuple[str, int], Dict[str, Any]] = {}
+        for p in positives_to_insert:
+            key = (p["cik"], p["fiscal_year"])
+            if key not in deduped_positives:
+                deduped_positives[key] = p
+            else:
+                existing = deduped_positives[key]
+                existing["label_rationale"] += f"; also cited in {p['label_rationale']}"
+        positives_to_insert = list(deduped_positives.values())
+
+        # Clear existing company_year_labels table before reloading
+        session.query(CompanyYearLabel).delete()
+        session.flush()
 
         # 6. Insert Positives into company_year_labels
         inserted_positives: List[Dict[str, Any]] = []
@@ -297,9 +320,14 @@ class LabelingPipeline:
         # 9. Export review queue
         self.export_review_queue(review_queue)
 
+        unique_pos_ciks = len(set(p["cik"] for p in inserted_positives))
+        unique_ctrl_ciks = len(set(c["cik"] for c in matched_controls))
         stats = {
             "positives_count": len(inserted_positives),
+            "positive_independent_ciks": unique_pos_ciks,
             "matched_controls_count": len(matched_controls),
+            "control_independent_ciks": unique_ctrl_ciks,
+            "total_cohort_records": len(inserted_positives) + len(matched_controls),
             "unmatched_positives_count": len(unmatched_positives),
             "unresolved_reasons": dict(unresolved_reasons),
         }

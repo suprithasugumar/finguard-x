@@ -91,18 +91,34 @@ class ControlsMatcher:
                 unmatched_positives.append(pos)
                 continue
 
-            # Calculate log-asset distance
-            with_distance = []
+            # Asset distance matching: prioritize +-30% total assets on SIC2 and FY
+            within_30 = []
+            outside_30 = []
             for c in available:
                 c_assets = max(c.get("assets") or 1.0, 1.0)
-                dist = abs(math.log(c_assets) - pos_log_assets)
-                with_distance.append((dist, c))
+                rel_dist = abs(c_assets - pos_assets) / pos_assets
+                log_dist = abs(math.log(c_assets) - pos_log_assets)
+                item = (rel_dist, log_dist, c)
+                if rel_dist <= 0.30:
+                    within_30.append(item)
+                else:
+                    outside_30.append(item)
 
-            # Sort by distance ascending
-            with_distance.sort(key=lambda x: x[0])
-            selected = with_distance[: self.ratio]
+            # Sort both pools by relative distance
+            within_30.sort(key=lambda x: x[0])
+            outside_30.sort(key=lambda x: x[0])
 
-            for dist, c in selected:
+            selected = within_30[: self.ratio]
+            if len(selected) < self.ratio:
+                # Fill remaining spots with closest available candidates
+                needed = self.ratio - len(selected)
+                selected.extend(outside_30[:needed])
+
+            if not selected:
+                unmatched_positives.append(pos)
+                continue
+
+            for rel_dist, log_dist, c in selected:
                 used_ciks_by_fy[pos_fy].add(c["cik"])
                 matched_controls.append(
                     {
@@ -112,10 +128,10 @@ class ControlsMatcher:
                         "label_confidence": "high",
                         "label_rationale": (
                             f"Matched 1:{self.ratio} control for positive CIK {pos_cik} FY {pos_fy} "
-                            f"(SIC {pos_sic_2d}, log asset distance {dist:.3f})"
+                            f"(SIC {pos_sic_2d}, asset relative distance {rel_dist:.1%}, log dist {log_dist:.3f})"
                         ),
                         "matched_positive_id": pos_id,
-                        "match_distance": float(dist),
+                        "match_distance": float(rel_dist),
                         "review_status": "auto",
                     }
                 )
