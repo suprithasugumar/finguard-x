@@ -173,5 +173,6 @@ class CompanyYearLabel(Base, TimestampMixin):
     )
     match_distance: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     review_status: Mapped[str] = mapped_column(String(30), default="auto", nullable=False)
+    eval_excluded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     __table_args__ = (Index("ix_cyl_cik_fy", "cik", "fiscal_year"),)

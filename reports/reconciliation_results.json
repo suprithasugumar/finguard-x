@@ -1,0 +1,25 @@
+{
+  "b1_text_breakdown": [
+    {
+      "category": "no_section_row",
+      "count": 917,
+      "pct": 82.91
+    },
+    {
+      "category": "processed_ok",
+      "count": 132,
+      "pct": 11.93
+    },
+    {
+      "category": "no_t-1_mda",
+      "count": 37,
+      "pct": 3.35
+    },
+    {
+      "category": "section_row_no_item7",
+      "count": 20,
+      "pct": 1.81
+    }
+  ],
+  "b2_discrepancy_explanation": {
+    "filing_nlp_features_total_rows": 

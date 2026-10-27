@@ -1,0 +1,212 @@
+{
+  "followup_1_leakage_auc": {
+    "roc_auc": 0.4114,
+    "pr_auc": 0.1418,
+    "base_rate": 0.1673,
+    "is_leakage": false,
+    "top_features": [
+      [
+        "intercept",
+        -1.1001
+      ],
+      [
+        "miss_rp_section",
+        -0.1572
+      ],
+      [
+        "miss_mda_section",
+        -0.1179
+      ],
+      [
+        "miss_nlp_drift",
+        -0.1178
+      ],
+      [
+        "miss_beneish_m_score",
+        -0.0596
+      ]
+    ]
+  },
+  "followup_2_text_breakdown": {
+    "no_filing": 0,
+    "no_item7": 937,
+    "no_t_minus_1_filing": 37,
+    "never_processed": 0,
+    "processed_zero_pairs": 0,
+    "successfully_processed": 132
+  },
+  "followup_3_rp_footnote_audit": {
+    "sample_size": 30,
+    "notes_found": 0,
+    "notes_absent": 30,
+    "false_negative_rate_pct": 0.0
+  },
+  "followup_4_fncs_exact_lines": {
+    "file_fncs_engine": "backend/app/fncs/fncs_engine.py",
+    "category_key_mismatch_lines": "258-264",
+    "similarity_threshold_default_lines": "156-157, 172-173",
+    "file_populate_fncs": "scripts/populate_fncs_features.py",
+    "empty_mda_query_lines": "240-245"
+  },
+  "followup_5_xbrl_recommendation": {
+    "recommended_start_year": 2012,
+    "pre_2012_xbrl_coverage_pct": 100.0,
+    "post_2012_xbrl_coverage_pct": 99.88333333333333,
+    "yearly_stats": [
+      {
+        "fiscal_year": 2010,
+        "total_cohort_rows": 30,
+        "aaer_rows": 5,
+        "ctrl_rows": 25,
+        "aaer_with_xbrl": 5,
+        "ctrl_with_xbrl": 25,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2011,
+        "total_cohort_rows": 60,
+        "aaer_rows": 10,
+        "ctrl_rows": 50,
+        "aaer_with_xbrl": 10,
+        "ctrl_with_xbrl": 50,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2012,
+        "total_cohort_rows": 60,
+        "aaer_rows": 10,
+        "ctrl_rows": 50,
+        "aaer_with_xbrl": 10,
+        "ctrl_with_xbrl": 50,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2013,
+        "total_cohort_rows": 66,
+        "aaer_rows": 11,
+        "ctrl_rows": 55,
+        "aaer_with_xbrl": 11,
+        "ctrl_with_xbrl": 55,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2014,
+        "total_cohort_rows": 72,
+        "aaer_rows": 12,
+        "ctrl_rows": 60,
+        "aaer_with_xbrl": 12,
+        "ctrl_with_xbrl": 60,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2015,
+        "total_cohort_rows": 108,
+        "aaer_rows": 18,
+        "ctrl_rows": 90,
+        "aaer_with_xbrl": 18,
+        "ctrl_with_xbrl": 90,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2016,
+        "total_cohort_rows": 74,
+        "aaer_rows": 13,
+        "ctrl_rows": 61,
+        "aaer_with_xbrl": 13,
+        "ctrl_with_xbrl": 60,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 98.4,
+        "overall_xbrl_pct": 98.6
+      },
+      {
+        "fiscal_year": 2017,
+        "total_cohort_rows": 96,
+        "aaer_rows": 16,
+        "ctrl_rows": 80,
+        "aaer_with_xbrl": 16,
+        "ctrl_with_xbrl": 80,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2018,
+        "total_cohort_rows": 120,
+        "aaer_rows": 20,
+        "ctrl_rows": 100,
+        "aaer_with_xbrl": 20,
+        "ctrl_with_xbrl": 100,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2019,
+        "total_cohort_rows": 144,
+        "aaer_rows": 24,
+        "ctrl_rows": 120,
+        "aaer_with_xbrl": 24,
+        "ctrl_with_xbrl": 120,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2020,
+        "total_cohort_rows": 90,
+        "aaer_rows": 15,
+        "ctrl_rows": 75,
+        "aaer_with_xbrl": 15,
+        "ctrl_with_xbrl": 75,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2021,
+        "total_cohort_rows": 66,
+        "aaer_rows": 11,
+        "ctrl_rows": 55,
+        "aaer_with_xbrl": 11,
+        "ctrl_with_xbrl": 55,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2022,
+        "total_cohort_rows": 66,
+        "aaer_rows": 11,
+        "ctrl_rows": 55,
+        "aaer_with_xbrl": 11,
+        "ctrl_with_xbrl": 55,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      },
+      {
+        "fiscal_year": 2023,
+        "total_cohort_rows": 54,
+        "aaer_rows": 9,
+        "ctrl_rows": 45,
+        "aaer_with_xbrl": 9,
+        "ctrl_with_xbrl": 45,
+        "aaer_xbrl_pct": 100.0,
+        "ctrl_xbrl_pct": 100.0,
+        "overall_xbrl_pct": 100.0
+      }
+    ]
+  }
+}

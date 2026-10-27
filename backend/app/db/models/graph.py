@@ -24,6 +24,8 @@ class CompanyYearGraphFeatures(Base, TimestampMixin):
     # Availability & Sizing Flags
     graph_available: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     graph_size: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # 4 Related-Party States: (a) no_note_disclosed, (b) note_by_reference, (c) note_found_extraction_failed, (d) graph_built
+    related_party_state: Mapped[str] = mapped_column(String(50), default="no_note_disclosed", nullable=False)
 
     # Topological Metrics (zeros if graph_available = False)
     num_nodes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

@@ -50,7 +50,7 @@ def populate_graph_features():
         total_cohort = len(cohort_rows)
         logger.info(f"Loaded {total_cohort} cohort company-years to process.")
 
-        # Pre-fetch all related_party texts from filing_sections
+        # Pre-fetch all related_party texts and item_13 texts from filing_sections
         section_rows = session.execute(
             text("""
                 SELECT cik, fiscal_year, text
@@ -58,11 +58,20 @@ def populate_graph_features():
                 WHERE section_type = 'related_party' AND text IS NOT NULL AND length(text) > 50
             """)
         ).fetchall()
-
         text_map = {(r[0], r[1]): r[2] for r in section_rows}
         logger.info(f"Loaded {len(text_map)} related-party text disclosures.")
 
-        # Clean existing rows if any
+        item13_rows = session.execute(
+            text("""
+                SELECT cik, fiscal_year, text
+                FROM filing_sections
+                WHERE section_type = 'item_13' AND text IS NOT NULL AND length(text) > 20
+            """)
+        ).fetchall()
+        item13_map = {(r[0], r[1]): r[2] for r in item13_rows}
+        logger.info(f"Loaded {len(item13_map)} Item 13 disclosures.")
+
+        # Clean existing rows
         session.execute(text("DELETE FROM company_year_graph_features"))
         session.commit()
 
@@ -73,9 +82,12 @@ def populate_graph_features():
         total_nodes_all = 0
         total_edges_all = 0
         total_shells_all = 0
+        state_counts = {"graph_built": 0, "note_found_extraction_failed": 0, "note_by_reference": 0, "no_note_disclosed": 0}
         real_examples = []
 
         batch_to_insert = []
+
+        import re
 
         for idx, row in enumerate(cohort_rows, 1):
             cik = row.cik
@@ -86,6 +98,7 @@ def populate_graph_features():
             label = row.label
 
             related_party_text = text_map.get((cik, fy))
+            item13_text = item13_map.get((cik, fy))
             prior_g = prior_graphs.get(cik)
 
             # Build graph and compute topological features
@@ -94,6 +107,25 @@ def populate_graph_features():
             # Save G as prior graph for next year
             if G.number_of_nodes() > 1:
                 prior_graphs[cik] = G
+
+            # Determine 4 distinct related-party states:
+            # (d) graph_built
+            # (c) note_found_extraction_failed
+            # (b) note_by_reference
+            # (a) no_note_disclosed
+            if feats["graph_available"] and feats["num_nodes"] > 1:
+                rp_state = "graph_built"
+            elif related_party_text and len(related_party_text.strip()) > 50:
+                rp_state = "note_found_extraction_failed"
+            elif item13_text:
+                if re.search(r'incorporat.*reference|proxy statement|definitive proxy|item 13|part iii', item13_text, re.I):
+                    rp_state = "note_by_reference"
+                else:
+                    rp_state = "no_note_disclosed"
+            else:
+                rp_state = "no_note_disclosed"
+
+            state_counts[rp_state] += 1
 
             if feats["graph_available"]:
                 usable_count += 1
@@ -114,6 +146,9 @@ def populate_graph_features():
                         "evidence": feats["evidence_edges"][0],
                     })
 
+            payload = feats["graph_payload"] or {"nodes": [], "edges": []}
+            payload["related_party_state"] = rp_state
+
             record = CompanyYearGraphFeatures(
                 filing_id=filing_id,
                 cik=cik,
@@ -121,6 +156,7 @@ def populate_graph_features():
                 accession_number=acc,
                 graph_available=feats["graph_available"],
                 graph_size=feats["graph_size"],
+                related_party_state=rp_state,
                 num_nodes=feats["num_nodes"],
                 num_edges=feats["num_edges"],
                 density=feats["density"],
@@ -134,7 +170,7 @@ def populate_graph_features():
                 yoy_node_churn=feats["yoy_node_churn"],
                 yoy_edge_churn=feats["yoy_edge_churn"],
                 graph_anomaly_score=feats["graph_anomaly_score"],
-                graph_payload=feats["graph_payload"],
+                graph_payload=payload,
                 evidence_edges=feats["evidence_edges"],
             )
             batch_to_insert.append(record)

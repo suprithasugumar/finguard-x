@@ -239,13 +239,13 @@ GRAPH_FEATURES = [
 ]
 
 FNCS_FEATURES = [
-    "cat1_revenue_recognition",
-    "cat2_inventory_valuation",
-    "cat3_reserve_manipulation",
-    "cat4_capitalized_expenses",
-    "cat5_related_party",
-    "cat6_governance_executive",
-    "cat7_going_concern",
+    "cat_growth",
+    "cat_profitability",
+    "cat_liquidity",
+    "cat_demand",
+    "cat_cash_flow",
+    "cat_risk",
+    "cat_outlook",
     "contradiction_score",
     "fncs_score",
 ]
@@ -324,13 +324,13 @@ def load_dataset() -> pd.DataFrame:
             COALESCE(cyg.yoy_edge_churn, 0.0) as yoy_edge_churn,
             COALESCE(cyg.graph_anomaly_score, 0.0) as graph_anomaly_score,
             -- FNCS features
-            COALESCE(cfncs.cat1_revenue_recognition, 0.0) as cat1_revenue_recognition,
-            COALESCE(cfncs.cat2_inventory_valuation, 0.0) as cat2_inventory_valuation,
-            COALESCE(cfncs.cat3_reserve_manipulation, 0.0) as cat3_reserve_manipulation,
-            COALESCE(cfncs.cat4_capitalized_expenses, 0.0) as cat4_capitalized_expenses,
-            COALESCE(cfncs.cat5_related_party, 0.0) as cat5_related_party,
-            COALESCE(cfncs.cat6_governance_executive, 0.0) as cat6_governance_executive,
-            COALESCE(cfncs.cat7_going_concern, 0.0) as cat7_going_concern,
+            COALESCE(cfncs.cat_growth, 0.0) as cat_growth,
+            COALESCE(cfncs.cat_profitability, 0.0) as cat_profitability,
+            COALESCE(cfncs.cat_liquidity, 0.0) as cat_liquidity,
+            COALESCE(cfncs.cat_demand, 0.0) as cat_demand,
+            COALESCE(cfncs.cat_cash_flow, 0.0) as cat_cash_flow,
+            COALESCE(cfncs.cat_risk, 0.0) as cat_risk,
+            COALESCE(cfncs.cat_outlook, 0.0) as cat_outlook,
             COALESCE(cfncs.contradiction_score, 0.0) as contradiction_score,
             COALESCE(cfncs.fncs_score, 0.8) as fncs_score
         FROM company_year_labels cyl

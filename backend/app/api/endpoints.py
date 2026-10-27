@@ -171,6 +171,8 @@ def get_company_financials(cik: str, fiscal_year: Optional[int] = None):
         query = """
             SELECT
                 fiscal_year, accession_number, beneish_m_score, beneish_flag_178, beneish_flag_222,
+                beneish_strict, beneish_neutral, beneish_n_components, inventory_applicable,
+                feature_statuses, null_reasons, sic,
                 beneish_dsri, beneish_gmi, beneish_aqi, beneish_sgi, beneish_depi,
                 beneish_sgai, beneish_lvgi, beneish_tata,
                 asset_turnover, roa, operating_margin, net_margin, current_ratio,
@@ -190,7 +192,7 @@ def get_company_financials(cik: str, fiscal_year: Optional[int] = None):
 
         # Also fetch raw dollar metrics for trend charts
         facts_query = """
-            SELECT fiscal_year, tag, val
+            SELECT fiscal_year, tag, value
             FROM financial_facts
             WHERE cik = :cik AND tag IN (
                 'Revenues', 'SalesRevenueNet', 'RevenueFromContractWithCustomerExcludingAssessedTax',
@@ -219,6 +221,59 @@ def get_company_financials(cik: str, fiscal_year: Optional[int] = None):
             cfo = raw_f.get("NetCashProvidedByUsedInOperatingActivities")
             ar = raw_f.get("AccountsReceivableNetCurrent")
 
+            is_financial = False
+            if r.sic and r.sic.isdigit():
+                sic_int = int(r.sic)
+                is_financial = 6000 <= sic_int <= 6999
+
+            null_r = r.null_reasons or {}
+            stat_r = r.feature_statuses or {}
+
+            ratios_map = {
+                "asset_turnover": r.asset_turnover,
+                "roa": r.roa,
+                "operating_margin": r.operating_margin,
+                "net_margin": r.net_margin,
+                "current_ratio": r.current_ratio,
+                "debt_to_equity": r.debt_to_equity,
+                "cash_to_assets": r.cash_to_assets,
+                "working_capital_to_assets": r.working_capital_to_assets,
+                "cfo_to_assets": r.cfo_to_assets,
+                "sales_to_receivables": r.sales_to_receivables,
+                "receivables_to_assets": r.receivables_to_assets,
+                "inventory_to_assets": r.inventory_to_assets,
+                "capex_to_assets": r.capex_to_assets,
+                "debt_to_assets": r.debt_to_assets,
+                "cash_flow_margin": r.cash_flow_margin,
+                "accruals_bs_to_assets": r.accruals_bs_to_assets,
+                "accruals_cf_to_assets": r.accruals_cf_to_assets,
+                "asset_growth": r.asset_growth,
+            }
+            beneish_map = {
+                "m_score": r.beneish_m_score,
+                "strict": r.beneish_strict,
+                "neutral": r.beneish_neutral,
+                "dsri": r.beneish_dsri,
+                "gmi": r.beneish_gmi,
+                "aqi": r.beneish_aqi,
+                "sgi": r.beneish_sgi,
+                "depi": r.beneish_depi,
+                "sgai": r.beneish_sgai,
+                "lvgi": r.beneish_lvgi,
+                "tata": r.beneish_tata,
+            }
+
+            # API Contract: {value, status, reason} per feature
+            feature_details = {}
+            for fname, fval in {**ratios_map, **beneish_map}.items():
+                reason = null_r.get(fname)
+                status = stat_r.get(fname, "ok" if fval is not None else (reason or "missing"))
+                feature_details[fname] = {
+                    "value": fval,
+                    "status": status,
+                    "reason": reason,
+                }
+
             all_years.append(
                 {
                     "fiscal_year": fy,
@@ -236,6 +291,11 @@ def get_company_financials(cik: str, fiscal_year: Optional[int] = None):
                     },
                     "beneish": {
                         "m_score": r.beneish_m_score,
+                        "strict": r.beneish_strict,
+                        "neutral": r.beneish_neutral,
+                        "n_components": r.beneish_n_components,
+                        "inventory_applicable": r.inventory_applicable,
+                        "is_financial_firm": is_financial,
                         "flag_178": r.beneish_flag_178,
                         "flag_222": r.beneish_flag_222,
                         "dsri": r.beneish_dsri,
@@ -247,26 +307,10 @@ def get_company_financials(cik: str, fiscal_year: Optional[int] = None):
                         "lvgi": r.beneish_lvgi,
                         "tata": r.beneish_tata,
                     },
-                    "ratios": {
-                        "asset_turnover": r.asset_turnover,
-                        "roa": r.roa,
-                        "operating_margin": r.operating_margin,
-                        "net_margin": r.net_margin,
-                        "current_ratio": r.current_ratio,
-                        "debt_to_equity": r.debt_to_equity,
-                        "cash_to_assets": r.cash_to_assets,
-                        "working_capital_to_assets": r.working_capital_to_assets,
-                        "cfo_to_assets": r.cfo_to_assets,
-                        "sales_to_receivables": r.sales_to_receivables,
-                        "receivables_to_assets": r.receivables_to_assets,
-                        "inventory_to_assets": r.inventory_to_assets,
-                        "capex_to_assets": r.capex_to_assets,
-                        "debt_to_assets": r.debt_to_assets,
-                        "cash_flow_margin": r.cash_flow_margin,
-                        "accruals_bs_to_assets": r.accruals_bs_to_assets,
-                        "accruals_cf_to_assets": r.accruals_cf_to_assets,
-                        "asset_growth": r.asset_growth,
-                    },
+                    "feature_details": feature_details,
+                    "statuses": stat_r,
+                    "null_reasons": null_r,
+                    "ratios": ratios_map,
                 }
             )
 
@@ -338,7 +382,7 @@ def get_company_graph(cik: str, fiscal_year: Optional[int] = None):
     with Session(engine) as session:
         query = """
             SELECT
-                fiscal_year, accession_number, graph_available, graph_size, num_nodes, num_edges,
+                fiscal_year, accession_number, graph_available, graph_size, related_party_state, num_nodes, num_edges,
                 density, avg_degree, num_officers, num_entities, num_undisclosed_or_shell,
                 max_clique_size, clustering_coefficient, betweenness_centrality_max,
                 yoy_node_churn, yoy_edge_churn, graph_anomaly_score, graph_payload, evidence_edges
@@ -358,6 +402,7 @@ def get_company_graph(cik: str, fiscal_year: Optional[int] = None):
                     "accession_number": r.accession_number,
                     "graph_available": r.graph_available,
                     "graph_size": r.graph_size,
+                    "related_party_state": r.related_party_state or ("graph_built" if r.graph_available else "no_note_disclosed"),
                     "num_nodes": r.num_nodes,
                     "num_edges": r.num_edges,
                     "density": r.density,
@@ -414,7 +459,9 @@ def get_company_explanation(cik: str, fiscal_year: Optional[int] = None):
         fncs_row = session.execute(
             text("""
                 SELECT
-                    fncs_score, contradiction_score, explanation_sentences, fncs_evidence
+                    fncs_score, contradiction_score, explanation_sentences, fncs_evidence,
+                    cat_growth, cat_profitability, cat_liquidity, cat_demand, cat_cash_flow, cat_risk, cat_outlook,
+                    category_statuses
                 FROM company_year_fncs_features
                 WHERE cik = :cik AND fiscal_year = :fy
             """),
@@ -428,6 +475,14 @@ def get_company_explanation(cik: str, fiscal_year: Optional[int] = None):
                 "contradiction_score": fncs_row.contradiction_score,
                 "explanation_sentences": fncs_row.explanation_sentences,
                 "categories": fncs_row.fncs_evidence,
+                "cat_growth": fncs_row.cat_growth,
+                "cat_profitability": fncs_row.cat_profitability,
+                "cat_liquidity": fncs_row.cat_liquidity,
+                "cat_demand": fncs_row.cat_demand,
+                "cat_cash_flow": fncs_row.cat_cash_flow,
+                "cat_risk": fncs_row.cat_risk,
+                "cat_outlook": fncs_row.cat_outlook,
+                "category_statuses": fncs_row.category_statuses or {},
             }
 
         return {
@@ -452,9 +507,10 @@ def get_company_explanation(cik: str, fiscal_year: Optional[int] = None):
 @router.get("/models/results")
 def get_model_results():
     """Retrieve full empirical ablation benchmark table, 95% CIs, and paired tests."""
-    results_path = Path("data/processed/stage3_results_summary.json")
+    _repo_root = Path(__file__).resolve().parents[3]
+    results_path = _repo_root / "data" / "processed" / "stage3_results_summary.json"
     if not results_path.exists():
-        raise HTTPException(status_code=404, detail="Results summary not found")
+        raise HTTPException(status_code=404, detail=f"Results summary not found at {results_path}")
 
     with open(results_path, "r", encoding="utf-8") as f:
         data = json.load(f)

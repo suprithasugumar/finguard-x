@@ -10,6 +10,9 @@ categories:
       - SalesRevenueNet
       - RevenueFromContractWithCustomerExcludingAssessedTax
       - SalesRevenueGoodsNet
+      - SalesRevenueServicesNet
+      - SalesRevenueGoodsGross
+      - OtherSalesRevenueNet
       - RealEstateRevenueNet
       - InterestAndDividendIncomeOperating
       - FinancialServicesRevenue
@@ -23,6 +26,7 @@ categories:
       - CostOfGoodsAndServicesSold
       - CostOfRevenue
       - CostOfGoodsSold
+      - CostOfServices
 
   gross_profit:
     description: "Gross profit"
@@ -35,6 +39,10 @@ categories:
       - SellingGeneralAndAdministrativeExpense
       - GeneralAndAdministrativeExpense
       - SellingAndMarketingExpense
+      - OtherGeneralAndAdministrativeExpense
+      - SellingExpense
+      - OtherSellingGeneralAndAdministrativeExpense
+      - OperatingExpenses
 
   operating_income:
     description: "Operating income / loss"
@@ -92,6 +100,12 @@ categories:
     tags:
       - AccountsReceivableNetCurrent
       - ReceivablesNetCurrent
+      - AccountsReceivableNet
+      - AccountsReceivableGrossCurrent
+      - AccountsAndOtherReceivablesNetCurrent
+      - OtherReceivablesNetCurrent
+      - ReceivablesNet
+      - AccountsAndNotesReceivableNet
 
   inventory:
     description: "Inventory net"
@@ -133,9 +147,11 @@ categories:
     description: "Net cash provided by (used in) operating activities"
     tags:
       - NetCashProvidedByUsedInOperatingActivities
+      - NetCashProvidedByUsedInOperatingActivitiesContinuingOperations
 
   capex:
     description: "Payments to acquire property, plant, and equipment (capital expenditures)"
     tags:
       - PaymentsToAcquirePropertyPlantAndEquipment
       - PaymentsToAcquireProductiveAssets
+

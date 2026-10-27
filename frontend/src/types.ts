@@ -48,6 +48,11 @@ export interface CompanyFinancialsResponse {
     accession_number: string;
     beneish: {
       m_score: number | null;
+      strict?: number | null;
+      neutral?: number | null;
+      n_components?: number;
+      inventory_applicable?: boolean;
+      is_financial_firm?: boolean;
       flag_178: boolean | null;
       flag_222: boolean | null;
       dsri: number | null;
@@ -59,6 +64,9 @@ export interface CompanyFinancialsResponse {
       lvgi: number | null;
       tata: number | null;
     };
+    statuses?: Record<string, string>;
+    null_reasons?: Record<string, string>;
+    feature_details?: Record<string, { value: number | null; status: string; reason: string | null }>;
     ratios: Record<string, number | null>;
   };
   history: Array<any>;
@@ -107,6 +115,7 @@ export interface CompanyGraphResponse {
     accession_number: string;
     graph_available: boolean;
     graph_size: number;
+    related_party_state?: "no_note_disclosed" | "note_by_reference" | "note_found_extraction_failed" | "graph_built";
     num_nodes: number;
     num_edges: number;
     density: number;

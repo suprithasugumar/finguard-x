@@ -19,6 +19,7 @@ import {
   HelpCircle,
   ExternalLink,
 } from "lucide-react";
+import { NetworkGraphVisualizer } from "../components/NetworkGraphVisualizer";
 
 interface CompanyProfilePageProps {
   cik: string;
@@ -113,6 +114,12 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
     gaugeColor = "#e11d48";
   }
 
+  const isNumericAvail = finData?.selected_year != null;
+  const isTextAvail = narrData?.selected_year?.narrative_drift_score != null;
+  const isGraphAvail = graphData?.selected_year?.related_party_state === "graph_built" || (graphData?.selected_year?.graph_available === true && (graphData.selected_year.num_nodes || 0) > 1);
+  const isFncsAvail = explData?.fncs?.fncs_score != null;
+  const availCount = [isNumericAvail, isTextAvail, isGraphAvail, isFncsAvail].filter(Boolean).length;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* 1. Header Banner */}
@@ -124,6 +131,15 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
               {company.ticker && company.ticker !== "N/A" ? company.ticker : "UNLISTED / CIK"}
             </span>
             <span className="text-xs text-slate-500 font-mono">CIK: {company.cik}</span>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
+              availCount === 4
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : availCount >= 2
+                ? "bg-sky-50 text-sky-700 border-sky-200"
+                : "bg-slate-100 text-slate-600 border-slate-200"
+            }`}>
+              Data Completeness: {availCount}/4 Modalities
+            </span>
           </div>
           <div className="text-xs text-slate-500 mt-1">
             SIC {company.sic} – {company.sic_description} | Exchange: {company.exchange && company.exchange !== "N/A" ? company.exchange : "SEC OTC / Private / Delisted"}
@@ -207,23 +223,40 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { id: "numeric", label: "Numeric Ratios", color: "bg-blue-600" },
-              { id: "text", label: "NLP Text Drift", color: "bg-purple-600" },
-              { id: "graph", label: "Related Graph", color: "bg-amber-600" },
-              { id: "fncs", label: "FNCS Contradiction", color: "bg-emerald-600" },
+              { id: "numeric", label: "Numeric Ratios", color: "bg-blue-600", avail: isNumericAvail },
+              { id: "text", label: "NLP Text Drift", color: "bg-purple-600", avail: isTextAvail },
+              { id: "graph", label: "Related Graph", color: "bg-amber-600", avail: isGraphAvail },
+              { id: "fncs", label: "FNCS Contradiction", color: "bg-emerald-600", avail: isFncsAvail },
             ].map((m) => {
-              const val = risk.modality_breakdown?.[m.id]?.risk_share_pct || 0;
-              const shap = risk.modality_breakdown?.[m.id]?.shap_sum || 0;
+              const modalityInfo = risk.modality_breakdown?.[m.id];
+              const isModAvail = m.avail && modalityInfo?.risk_share_pct != null;
+              const val = modalityInfo?.risk_share_pct;
+              const shap = modalityInfo?.shap_sum;
               return (
                 <div key={m.id} className="p-2.5 rounded bg-slate-50 border border-slate-100">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-medium text-slate-700">{m.label}</span>
-                    <span className="font-bold text-slate-900">{val}%</span>
+                    <span className="font-bold text-slate-900">
+                      {isModAvail && val != null ? (
+                        `${val}%`
+                      ) : (
+                        <span className="text-slate-400 font-normal italic text-[11px]">Not available</span>
+                      )}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1.5 overflow-hidden">
-                    <div className={`h-full ${m.color}`} style={{ width: `${Math.min(100, Math.max(5, val))}%` }} />
+                    <div
+                      className={`h-full ${m.color}`}
+                      style={{ width: isModAvail && val != null ? `${Math.min(100, Math.max(5, val))}%` : "0%" }}
+                    />
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-1">SHAP: {shap > 0 ? "+" : ""}{shap.toFixed(3)}</div>
+                  <div className="text-[10px] text-slate-400 mt-1">
+                    {isModAvail && shap != null ? (
+                      `SHAP: ${shap > 0 ? "+" : ""}${shap.toFixed(3)}`
+                    ) : (
+                      "Modality not present"
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -300,14 +333,48 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
         <div className="space-y-6">
           {/* Beneish Overview */}
           <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-900">Beneish M-Score Assessment</h3>
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">Beneish M-Score Assessment</h3>
+              {finData.selected_year?.beneish?.is_financial_firm && (
+                <span className="text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded font-medium border border-amber-200">
+                  Financial Institution (SIC 6000–6999) — Excluded from Beneish
+                </span>
+              )}
+            </div>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div className="p-3.5 rounded bg-slate-50 border border-slate-200">
-                <span className="text-xs text-slate-500">Beneish M-Score</span>
+                <span className="text-xs text-slate-500">Beneish Neutral (Standardized)</span>
                 <div className="text-xl font-bold text-slate-900 mt-1">
-                  {finData.selected_year?.beneish?.m_score?.toFixed(2) || "N/A"}
+                  {finData.selected_year?.beneish?.neutral != null
+                    ? finData.selected_year.beneish.neutral.toFixed(2)
+                    : finData.selected_year?.beneish?.m_score?.toFixed(2) || (
+                      <span className="text-slate-400 text-sm font-normal italic" title={finData.selected_year?.null_reasons?.beneish_strict || "Not available"}>
+                        Not available
+                      </span>
+                    )}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-0.5">Threshold -1.78 (Standard) / -2.22 (Conservative)</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  {finData.selected_year?.beneish?.n_components ? `${finData.selected_year.beneish.n_components}/8 components` : "Threshold -1.78"}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded bg-slate-50 border border-slate-200">
+                <span className="text-xs text-slate-500">Beneish Strict (8/8 Required)</span>
+                <div className="text-xl font-bold text-slate-900 mt-1">
+                  {finData.selected_year?.beneish?.strict != null ? (
+                    finData.selected_year.beneish.strict.toFixed(2)
+                  ) : (
+                    <span
+                      className="text-slate-400 text-xs font-normal italic cursor-help"
+                      title={finData.selected_year?.null_reasons?.beneish_strict || "Incomplete components"}
+                    >
+                      {finData.selected_year?.beneish?.is_financial_firm
+                        ? "N/A (Financial Firm)"
+                        : "Not available (Missing components)"}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Strict GAAP Disclosure</div>
               </div>
 
               <div className="p-3.5 rounded bg-slate-50 border border-slate-200">
@@ -338,11 +405,20 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
               <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">8 Beneish Sub-Indices</h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 {Object.entries(finData.selected_year?.beneish || {})
-                  .filter(([k]) => !["m_score", "flag_178", "flag_222"].includes(k))
+                  .filter(([k]) => ["dsri", "gmi", "aqi", "sgi", "depi", "sgai", "lvgi", "tata"].includes(k))
                   .map(([k, v]: [string, any]) => (
                     <div key={k} className="p-2.5 rounded bg-slate-50 border border-slate-100 flex justify-between items-center">
                       <span className="font-mono text-slate-600 uppercase">{k}</span>
-                      <span className="font-bold text-slate-900">{typeof v === "number" ? v.toFixed(3) : "N/A"}</span>
+                      {typeof v === "number" ? (
+                        <span className="font-bold text-slate-900">{v.toFixed(3)}</span>
+                      ) : (
+                        <span
+                          className="text-slate-400 italic text-[11px] cursor-help"
+                          title={finData.selected_year?.null_reasons?.[`beneish_${k}`] || "Not reported"}
+                        >
+                          Not available
+                        </span>
+                      )}
                     </div>
                   ))}
               </div>
@@ -407,7 +483,14 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
                             <span className={h.beneish.m_score > -1.78 ? "text-rose-600 font-bold" : "text-slate-700"}>
                               {h.beneish.m_score.toFixed(2)}
                             </span>
-                          ) : "N/A"}
+                          ) : (
+                            <span
+                              className="text-slate-400 italic text-[11px] cursor-help"
+                              title={h.null_reasons?.beneish_strict || "Not available"}
+                            >
+                              Not available
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -425,7 +508,16 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
                 <div key={k} className="p-2.5 rounded bg-slate-50 border border-slate-100 flex justify-between items-center">
                   <span className="text-slate-600">{k.replace(/_/g, " ")}</span>
                   <span className="font-mono font-semibold text-slate-900">
-                    {typeof v === "number" ? v.toFixed(4) : "N/A"}
+                    {typeof v === "number" ? (
+                      v.toFixed(4)
+                    ) : (
+                      <span
+                        className="text-slate-400 italic text-[11px] cursor-help"
+                        title={finData.selected_year?.null_reasons?.[k] || "Not available"}
+                      >
+                        Not available
+                      </span>
+                    )}
                   </span>
                 </div>
               ))}
@@ -507,126 +599,144 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
       {activeTab === "graph" && graphData && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-sm font-semibold text-slate-900">Related-Party Network Topology</h3>
-              <span className={`text-xs px-2.5 py-0.5 rounded font-semibold ${
-                graphData.selected_year?.graph_available ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"
-              }`}>
-                {graphData.selected_year?.graph_available ? "Graph Available" : "Footnote Not Disclosed / Empty"}
-              </span>
-            </div>
+            {(() => {
+              const rpState = graphData.selected_year?.related_party_state || (
+                graphData.selected_year?.graph_available && (graphData.selected_year?.num_nodes || 0) > 1
+                  ? "graph_built"
+                  : "no_note_disclosed"
+              );
+              const nodeChurn = graphData.selected_year?.yoy_node_churn || 0;
+              const edgeChurn = graphData.selected_year?.yoy_edge_churn || 0;
+              const hasHighChurn = rpState === "graph_built" && (nodeChurn > 0.3 || edgeChurn > 0.3);
 
-            <div className="mb-4 p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-2">
-              <div>
-                <strong>Pattern Notice:</strong> Unusual related-party network pattern detected in footnote disclosures (interconnected entities, shell affiliates, or new executive ties).
-              </div>
-              <div className="pt-2 border-t border-amber-200/60 text-amber-900 font-medium">
-                <strong>Network Evolution Warning:</strong> Rapid YoY entity/edge churn or sudden appearance of undisclosed shell/holding entities indicates potential structural restructuring or off-balance-sheet opacity risks.
-              </div>
-            </div>
-
-            {/* Network Year Scrub Slider */}
-            {available_years && available_years.length > 1 && (
-              <div className="mb-5 p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                <div className="flex items-center space-x-2">
-                  <span className="font-semibold text-slate-700">Timeline Year Scrub:</span>
-                  <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-bold font-mono">
-                    FY {selectedYear || available_years[0]}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3 flex-1 max-w-md">
-                  <span className="text-slate-400 font-mono text-[11px]">{available_years[available_years.length - 1]}</span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={available_years.length - 1}
-                    value={available_years.indexOf(selectedYear || available_years[0])}
-                    onChange={(e) => {
-                      const idx = parseInt(e.target.value, 10);
-                      if (available_years[idx]) {
-                        setSelectedYear(available_years[idx]);
-                      }
-                    }}
-                    className="w-full accent-sky-600 cursor-pointer"
-                  />
-                  <span className="text-slate-400 font-mono text-[11px]">{available_years[0]}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div className="p-3 rounded bg-slate-50 border border-slate-200">
-                <span className="text-slate-500">Network Entities</span>
-                <div className="text-lg font-bold text-slate-900 mt-1">{graphData.selected_year?.num_nodes || 0}</div>
-              </div>
-              <div className="p-3 rounded bg-slate-50 border border-slate-200">
-                <span className="text-slate-500">Transaction Edges</span>
-                <div className="text-lg font-bold text-slate-900 mt-1">{graphData.selected_year?.num_edges || 0}</div>
-              </div>
-              <div className="p-3 rounded bg-slate-50 border border-slate-200">
-                <span className="text-slate-500">Shell / LLC Affiliates</span>
-                <div className="text-lg font-bold text-rose-600 mt-1">{graphData.selected_year?.num_undisclosed_or_shell || 0}</div>
-              </div>
-              <div className="p-3 rounded bg-slate-50 border border-slate-200">
-                <span className="text-slate-500">Opacity Anomaly Score</span>
-                <div className="text-lg font-bold text-slate-900 mt-1">
-                  {graphData.selected_year?.graph_anomaly_score?.toFixed(3) || "0.000"}
-                </div>
-              </div>
-            </div>
-
-            {/* Network Diagram Visualizer */}
-            <div className="mt-6 border border-slate-200 rounded-lg p-6 bg-slate-50/50">
-              <h4 className="text-xs font-semibold text-slate-700 mb-3">Extracted Entity Network Topology</h4>
-              {graphData.selected_year?.graph_payload?.nodes && graphData.selected_year.graph_payload.nodes.length > 1 ? (
-                <div className="space-y-4">
-                  {/* Entity nodes list */}
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    {graphData.selected_year.graph_payload.nodes.map((n) => {
-                      let nodeStyle = "bg-white text-slate-800 border-slate-200";
-                      const isNew = n.type === "SHELL_OR_HOLDING" || n.label.toLowerCase().includes("llc") || n.label.toLowerCase().includes("holding");
-                      if (n.type === "FOCAL_COMPANY") nodeStyle = "bg-sky-600 text-white font-bold";
-                      else if (n.type === "PERSON") nodeStyle = "bg-indigo-50 text-indigo-800 border-indigo-200";
-                      else if (n.type === "SHELL_OR_HOLDING") nodeStyle = "bg-rose-50 text-rose-800 border-rose-200 font-semibold";
-                      return (
-                        <div key={n.id} className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md border text-[11px] ${nodeStyle}`}>
-                          <span>{n.label}</span>
-                          {isNew && (
-                            <span className="text-[9px] font-bold bg-rose-200 text-rose-900 px-1 py-0.2 rounded uppercase tracking-wide">
-                              NEW ENTITY
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
+              return (
+                <>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-sm font-semibold text-slate-900">Related-Party Network Topology</h3>
+                    <span className={`text-xs px-2.5 py-0.5 rounded font-semibold ${
+                      rpState === "graph_built"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : rpState === "note_found_extraction_failed"
+                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        : rpState === "note_by_reference"
+                        ? "bg-slate-100 text-slate-600 border border-slate-200"
+                        : "bg-slate-100 text-slate-500 border border-slate-200"
+                    }`}>
+                      {rpState === "graph_built" && "Graph Built"}
+                      {rpState === "note_found_extraction_failed" && "Data-Quality Flag: Extraction Incomplete"}
+                      {rpState === "note_by_reference" && "Disclosed by Reference to Proxy / Item 13"}
+                      {rpState === "no_note_disclosed" && "No Note Disclosed"}
+                    </span>
                   </div>
 
-                  {/* Evidence edges list */}
-                  {graphData.selected_year.evidence_edges && graphData.selected_year.evidence_edges.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-slate-200">
-                      <span className="text-xs font-semibold text-slate-700 block mb-2">Disclosure Transaction Evidence:</span>
-                      <div className="space-y-2">
-                        {graphData.selected_year.evidence_edges.map((e, idx) => (
-                          <div key={idx} className="p-3 rounded bg-white border border-slate-200 text-xs">
-                            <div className="font-semibold text-slate-800 flex items-center space-x-1.5 mb-1">
-                              <span>{e.source}</span>
-                              <span className="text-slate-400">↔</span>
-                              <span>{e.target}</span>
-                              <span className="text-[10px] text-sky-700 font-mono">({e.relation})</span>
-                            </div>
-                            <p className="text-slate-600 italic text-[11px]">&quot;{e.evidence_sentence}&quot;</p>
-                          </div>
-                        ))}
+                  {/* Warning banner ONLY shown for (d) graph_built with churn above 0.30 threshold */}
+                  {hasHighChurn && (
+                    <div className="mb-4 p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-1">
+                      <div className="font-semibold text-amber-900">
+                        Network Evolution Warning: Rapid YoY Related-Party Topology Churn
+                      </div>
+                      <div>
+                        Elevated entity churn ({(nodeChurn * 100).toFixed(0)}%) or edge restructuring ({(edgeChurn * 100).toFixed(0)}%) detected in footnote disclosures, indicating potential structural reconfiguration or opacity risks.
                       </div>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="text-xs text-slate-400 py-10 text-center">
-                  No related-party network disclosure detected for this fiscal year.
-                </div>
-              )}
-            </div>
+
+                  {/* Render based on the 4 distinct states */}
+                  {rpState === "graph_built" ? (
+                    <>
+                      {/* Network Year Scrub Slider */}
+                      {available_years && available_years.length > 1 && (
+                        <div className="mb-5 p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold text-slate-700">Timeline Year Scrub:</span>
+                            <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-bold font-mono">
+                              FY {selectedYear || available_years[0]}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-3 flex-1 max-w-md">
+                            <span className="text-slate-400 font-mono text-[11px]">{available_years[available_years.length - 1]}</span>
+                            <input
+                              type="range"
+                              min={0}
+                              max={available_years.length - 1}
+                              value={available_years.indexOf(selectedYear || available_years[0])}
+                              onChange={(e) => {
+                                const idx = parseInt(e.target.value, 10);
+                                if (available_years[idx]) {
+                                  setSelectedYear(available_years[idx]);
+                                }
+                              }}
+                              className="w-full accent-sky-600 cursor-pointer"
+                            />
+                            <span className="text-slate-400 font-mono text-[11px]">{available_years[0]}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div className="p-3 rounded bg-slate-50 border border-slate-200">
+                          <span className="text-slate-500">Network Entities</span>
+                          <div className="text-lg font-bold text-slate-900 mt-1">{graphData.selected_year?.num_nodes || 0}</div>
+                        </div>
+                        <div className="p-3 rounded bg-slate-50 border border-slate-200">
+                          <span className="text-slate-500">Transaction Edges</span>
+                          <div className="text-lg font-bold text-slate-900 mt-1">{graphData.selected_year?.num_edges || 0}</div>
+                        </div>
+                        <div className="p-3 rounded bg-slate-50 border border-slate-200">
+                          <span className="text-slate-500">Shell / LLC Affiliates</span>
+                          <div className="text-lg font-bold text-rose-600 mt-1">{graphData.selected_year?.num_undisclosed_or_shell || 0}</div>
+                        </div>
+                        <div className="p-3 rounded bg-slate-50 border border-slate-200">
+                          <span className="text-slate-500">Opacity Anomaly Score</span>
+                          <div className="text-lg font-bold text-slate-900 mt-1">
+                            {graphData.selected_year?.graph_anomaly_score?.toFixed(3) || "0.000"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Interactive Network Diagram Visualizer */}
+                      <div className="mt-6 border border-slate-200 rounded-lg p-6 bg-slate-50/50">
+                        <h4 className="text-xs font-semibold text-slate-700 mb-3">Extracted Entity Network Topology</h4>
+                        <NetworkGraphVisualizer
+                          nodes={graphData.selected_year?.graph_payload?.nodes || []}
+                          edges={graphData.selected_year?.graph_payload?.edges || []}
+                          evidenceEdges={graphData.selected_year?.evidence_edges || []}
+                          companyName={company.name}
+                        />
+                      </div>
+                    </>
+                  ) : rpState === "note_found_extraction_failed" ? (
+                    <div className="p-6 rounded-lg bg-amber-50/60 border border-amber-200 text-xs space-y-2">
+                      <div className="flex items-center space-x-2 font-bold text-sm text-amber-800">
+                        <AlertOctagon className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <span>Data-Quality Flag: Footnote Disclosed, Entity Extraction Incomplete</span>
+                      </div>
+                      <p className="text-amber-700 leading-relaxed">
+                        A related-party footnote disclosure was found in this 10-K filing, but automated entity-relation extraction could not parse structured transaction pairs. The footnote text is preserved in filing sections for manual inspection.
+                      </p>
+                    </div>
+                  ) : rpState === "note_by_reference" ? (
+                    <div className="p-6 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-2">
+                      <div className="font-semibold text-sm text-slate-700">
+                        Footnote Disclosed by Reference to Definitive Proxy / Item 13
+                      </div>
+                      <p className="text-slate-500 leading-relaxed">
+                        This registrant incorporates information regarding certain relationships and related transactions by reference to its definitive Proxy Statement (Schedule 14A) pursuant to Part III, Item 13 of Form 10-K.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-6 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-2">
+                      <div className="font-semibold text-sm text-slate-700">
+                        No Related-Party Note Disclosed
+                      </div>
+                      <p className="text-slate-500 leading-relaxed">
+                        No related-party transactions footnote disclosure was identified in this 10-K filing.
+                      </p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -662,33 +772,47 @@ export const CompanyProfilePage: React.FC<CompanyProfilePageProps> = ({ cik }) =
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-slate-900">{c.name}</span>
                     <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                      c.contradiction_xc > 0.25 ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"
+                      c.contradiction_xc != null && c.contradiction_xc > 0.25
+                        ? "bg-rose-100 text-rose-800"
+                        : c.contradiction_xc != null
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-slate-100 text-slate-500"
                     }`}>
-                      Contradiction: {c.contradiction_xc?.toFixed(2)}
+                      {c.contradiction_xc != null ? `Contradiction: ${c.contradiction_xc.toFixed(2)}` : (c.status || "N/A")}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 py-1 border-y border-slate-200/60 text-[11px]">
                     <div>
                       <span className="text-slate-400 block">Numeric Signal</span>
-                      <span className="font-mono font-semibold text-slate-800">{c.numeric_signal_nc > 0 ? "+" : ""}{c.numeric_signal_nc?.toFixed(2)}</span>
+                      <span className="font-mono font-semibold text-slate-800">
+                        {c.numeric_signal_nc != null ? `${c.numeric_signal_nc > 0 ? "+" : ""}${c.numeric_signal_nc.toFixed(2)}` : "N/A"}
+                      </span>
                     </div>
                     <div>
                       <span className="text-slate-400 block">Text Tone</span>
-                      <span className="font-mono font-semibold text-slate-800">{c.text_tone_tc > 0 ? "+" : ""}{c.text_tone_tc?.toFixed(2)}</span>
+                      <span className="font-mono font-semibold text-slate-800">
+                        {c.text_tone_tc != null ? `${c.text_tone_tc > 0 ? "+" : ""}${c.text_tone_tc.toFixed(2)}` : "N/A"}
+                      </span>
                     </div>
                     <div>
                       <span className="text-slate-400 block">Relevance Weight</span>
-                      <span className="font-mono font-semibold text-slate-800">{c.presence_weight_wc?.toFixed(2)}</span>
+                      <span className="font-mono font-semibold text-slate-800">
+                        {c.presence_weight_wc != null ? c.presence_weight_wc.toFixed(2) : "N/A"}
+                      </span>
                     </div>
                   </div>
 
-                  {c.retrieved_sentence && (
+                  {c.retrieved_sentence ? (
                     <div className="mt-2">
                       <span className="text-[10px] text-slate-500 font-semibold block mb-0.5">Retrieved Disclosure Sentence:</span>
-                      <p className="text-[11px] text-slate-700 bg-white p-2 rounded border border-slate-100 italic">
+                      <p className="text-[11px] text-slate-700 bg-white p-2.5 rounded border border-slate-100 italic">
                         &quot;{c.retrieved_sentence}&quot;
                       </p>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-[11px] text-slate-400 italic">
+                      Status: {c.status === "below_similarity_threshold" ? "Disclosure below semantic relevance threshold (0.32)" : c.status || "No disclosure"}
                     </div>
                   )}
                 </div>

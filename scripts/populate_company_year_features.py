@@ -14,7 +14,30 @@ from backend.app.db.session import get_session_factory
 from backend.app.db.models.entities import CompanyYearLabel
 from backend.app.db.models.features import CompanyYearFeatures
 from backend.app.features.financial_features import FinancialFeaturesExtractor
-from sklearn.metrics import precision_recall_curve, roc_auc_score, auc
+
+def compute_roc_auc(y_true, y_scores):
+    order = np.argsort(y_scores)
+    rank = np.empty_like(order)
+    rank[order] = np.arange(len(order))
+    n_pos = np.sum(y_true == 1)
+    n_neg = np.sum(y_true == 0)
+    if n_pos == 0 or n_neg == 0:
+        return 0.5
+    rank_sum_pos = np.sum(rank[y_true == 1])
+    u = rank_sum_pos - (n_pos * (n_pos - 1)) / 2.0
+    return float(u / (n_pos * n_neg))
+
+def compute_pr_auc(y_true, y_scores):
+    order = np.argsort(-y_scores)
+    y_sorted = y_true[order]
+    n_pos = np.sum(y_true == 1)
+    if n_pos == 0:
+        return 0.0
+    tp = np.cumsum(y_sorted == 1)
+    fp = np.cumsum(y_sorted == 0)
+    recall = tp / n_pos
+    precision = tp / (tp + fp)
+    return float(np.sum((recall[1:] - recall[:-1]) * precision[1:]))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-7s | %(message)s")
 logger = logging.getLogger("finguard.populate_features")
@@ -77,7 +100,7 @@ def run_financial_features_population():
         "accruals_cf_to_assets", "asset_growth",
         "beneish_dsri", "beneish_gmi", "beneish_aqi", "beneish_sgi",
         "beneish_depi", "beneish_sgai", "beneish_lvgi", "beneish_tata",
-        "beneish_m_score"
+        "beneish_m_score", "beneish_strict", "beneish_neutral", "beneish_n_components"
     ]
 
     distribution_summary = {}
@@ -142,9 +165,8 @@ def run_financial_features_population():
     if m_eval:
         y_true = np.array([m[0] for m in m_eval])
         y_scores = np.array([m[1] for m in m_eval])
-        roc_auc = float(roc_auc_score(y_true, y_scores))
-        precision, recall, _ = precision_recall_curve(y_true, y_scores)
-        pr_auc = float(auc(recall, precision))
+        roc_auc = compute_roc_auc(y_true, y_scores)
+        pr_auc = compute_pr_auc(y_true, y_scores)
         pos_count = int(np.sum(y_true))
         total_eval = len(m_eval)
 

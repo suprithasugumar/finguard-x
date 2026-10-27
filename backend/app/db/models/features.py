@@ -66,6 +66,11 @@ class CompanyYearFeatures(Base, TimestampMixin):
 
     # Composite M-Score & Risk Flags
     beneish_m_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    beneish_strict: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    beneish_neutral: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    beneish_n_components: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    inventory_applicable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    feature_statuses: Mapped[Any] = mapped_column(JSON, default=dict, nullable=False)
     beneish_flag_178: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     beneish_flag_222: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 

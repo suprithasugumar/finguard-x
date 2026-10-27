@@ -76,13 +76,13 @@ HUMAN_FEATURE_NAMES = {
     "yoy_edge_churn": "Year-over-Year Affiliation Edge Churn Rate",
     "graph_anomaly_score": "Related-Party Network Opacity Anomaly Score",
     # FNCS
-    "cat1_revenue_recognition": "Revenue Recognition Narrative Discordance",
-    "cat2_inventory_valuation": "Inventory Valuation Narrative Discordance",
-    "cat3_reserve_manipulation": "Reserve & Accrual Quality Narrative Discordance",
-    "cat4_capitalized_expenses": "Capitalized Expense Narrative Discordance",
-    "cat5_related_party": "Related-Party Opacity Narrative Discordance",
-    "cat6_governance_executive": "Governance & Compensation Narrative Discordance",
-    "cat7_going_concern": "Going Concern & Liquidity Discordance",
+    "cat_growth": "Growth Narrative Contradiction",
+    "cat_profitability": "Profitability Narrative Contradiction",
+    "cat_liquidity": "Liquidity Narrative Contradiction",
+    "cat_demand": "Demand Narrative Contradiction",
+    "cat_cash_flow": "Cash Flow Narrative Contradiction",
+    "cat_risk": "Risk Narrative Contradiction",
+    "cat_outlook": "Outlook Narrative Contradiction",
     "contradiction_score": "Composite Financial Narrative Contradiction Score",
     "fncs_score": "Financial-Narrative Consistency Index (FNCS)",
 }
@@ -243,24 +243,56 @@ class MultiModalExplanationEngine:
             # Modality SHAP Aggregation (in log-odds)
             modality_breakdown = {}
             total_pos_shap = 0.0
-            for mod, idxs in self.modality_indices.items():
-                mod_shap_sum = float(np.sum(oof_shaps[i, idxs]))
-                modality_breakdown[mod] = {
-                    "shap_sum": round(mod_shap_sum, 4),
-                    "positive_shap": round(
-                        float(np.sum(np.maximum(oof_shaps[i, idxs], 0.0))), 4
-                    ),
-                }
-                total_pos_shap += max(0.0, mod_shap_sum)
 
-            for mod in modality_breakdown:
-                mod_sum = modality_breakdown[mod]["shap_sum"]
-                pct = (
-                    (max(0.0, mod_sum) / max(total_pos_shap, 1e-6)) * 100.0
-                    if total_pos_shap > 0
-                    else 25.0
-                )
-                modality_breakdown[mod]["risk_share_pct"] = round(pct, 1)
+            # Determine modality presence
+            # Graph: check if num_nodes > 1
+            num_nodes_idx = self.all_features.index("num_nodes") if "num_nodes" in self.all_features else None
+            has_graph = (num_nodes_idx is not None and X_raw[i, num_nodes_idx] > 1)
+
+            # Text: check if narrative_drift_score > 0
+            drift_idx = self.all_features.index("narrative_drift_score") if "narrative_drift_score" in self.all_features else None
+            has_text = (drift_idx is not None and X_raw[i, drift_idx] > 0.0)
+
+            # FNCS: check if contradiction_score is recorded (or fncs_score is non-default)
+            fncs_idx = self.all_features.index("fncs_score") if "fncs_score" in self.all_features else None
+            has_fncs = (fncs_idx is not None and not np.isnan(X_raw[i, fncs_idx]) and X_raw[i, fncs_idx] > 0)
+
+            mod_avail = {
+                "numeric": True,
+                "text": has_text,
+                "graph": has_graph,
+                "fncs": has_fncs,
+            }
+
+            for mod, idxs in self.modality_indices.items():
+                is_avail = mod_avail.get(mod, True)
+                if is_avail:
+                    mod_shap_sum = float(np.sum(oof_shaps[i, idxs]))
+                    modality_breakdown[mod] = {
+                        "is_available": True,
+                        "shap_sum": round(mod_shap_sum, 4),
+                        "positive_shap": round(
+                            float(np.sum(np.maximum(oof_shaps[i, idxs], 0.0))), 4
+                        ),
+                    }
+                    total_pos_shap += max(0.0, mod_shap_sum)
+                else:
+                    modality_breakdown[mod] = {
+                        "is_available": False,
+                        "shap_sum": None,
+                        "positive_shap": None,
+                        "risk_share_pct": None,
+                    }
+
+            for mod, d in modality_breakdown.items():
+                if d.get("is_available"):
+                    mod_sum = d["shap_sum"] or 0.0
+                    pct = (
+                        (max(0.0, mod_sum) / max(total_pos_shap, 1e-6)) * 100.0
+                        if total_pos_shap > 0
+                        else 25.0
+                    )
+                    d["risk_share_pct"] = round(pct, 1)
 
             # Top Individual Factors (Ranked by absolute log-odds impact)
             row_shaps = oof_shaps[i]
@@ -319,7 +351,7 @@ class MultiModalExplanationEngine:
                 }
                 top_factors.append(factor_obj)
 
-            top_mod = max(modality_breakdown.items(), key=lambda x: x[1]["risk_share_pct"])[0]
+            top_mod = max(modality_breakdown.items(), key=lambda x: (x[1]["risk_share_pct"] or 0.0))[0]
             top_f_desc = top_factors[0]["human_name"] if top_factors else "Financial ratios"
 
             summary = (

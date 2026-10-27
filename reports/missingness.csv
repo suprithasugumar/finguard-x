@@ -1,0 +1,55 @@
+feature_group,table_name,feature_name,total_records,null_count,null_pct,zero_count,zero_pct,null_or_zero_count,null_or_zero_pct,aaer_null_pct,aaer_zero_pct,ctrl_null_pct,ctrl_zero_pct,fy_null_pct_min,fy_null_pct_max,top_root_cause
+beneish,company_year_features,beneish_dsri,1106,300,27.12,2,0.18,302,27.31,32.43,0.0,26.06,0.22,10.61,90.0,missing_rec_or_rev
+beneish,company_year_features,beneish_gmi,1106,421,38.07,1,0.09,422,38.16,39.46,0.0,37.79,0.11,18.18,96.67,no_cogs_reported
+beneish,company_year_features,beneish_aqi,1106,218,19.71,2,0.18,220,19.89,21.08,0.0,19.44,0.22,4.55,90.0,missing_ca_ppen_or_ta
+beneish,company_year_features,beneish_sgi,1106,175,15.82,4,0.36,179,16.18,20.54,0.0,14.88,0.43,0.0,90.0,missing_prior_rev
+beneish,company_year_features,beneish_depi,1106,211,19.08,1,0.09,212,19.17,22.16,0.0,18.46,0.11,4.55,90.0,missing_depr_or_ppen
+beneish,company_year_features,beneish_sgai,1106,258,23.33,0,0.0,258,23.33,24.86,0.0,23.02,0.0,7.58,96.67,missing_sga_or_rev
+beneish,company_year_features,beneish_lvgi,1106,131,11.84,1,0.09,132,11.93,15.14,0.0,11.18,0.11,3.03,90.0,not_applicable_financial_firm
+beneish,company_year_features,beneish_tata,1106,294,26.58,0,0.0,294,26.58,29.73,0.0,25.95,0.0,3.03,90.0,missing_ni_cfo_or_ta
+beneish,company_year_features,beneish_m_score,1106,653,59.04,0,0.0,653,59.04,61.62,0.0,58.52,0.0,43.94,96.67,Missing inputs
+ratio_18,company_year_features,asset_turnover,1106,89,8.05,21,1.9,110,9.95,12.97,0.54,7.06,2.17,0.0,80.0,missing_rev_or_assets
+ratio_18,company_year_features,roa,1106,85,7.69,0,0.0,85,7.69,10.81,0.0,7.06,0.0,0.0,80.0,missing_ni_or_assets
+ratio_18,company_year_features,operating_margin,1106,199,17.99,0,0.0,199,17.99,21.08,0.0,17.37,0.0,7.58,86.67,missing_opinc_or_rev
+ratio_18,company_year_features,net_margin,1106,133,12.03,0,0.0,133,12.03,14.59,0.0,11.51,0.0,0.0,80.0,missing_ni_or_rev
+ratio_18,company_year_features,current_ratio,1106,123,11.12,0,0.0,123,11.12,11.89,0.0,10.97,0.0,1.52,86.67,missing_ca_or_cl
+ratio_18,company_year_features,debt_to_equity,1106,217,19.62,0,0.0,217,19.62,19.46,0.0,19.65,0.0,8.11,83.33,missing_tl_or_equity
+ratio_18,company_year_features,cash_to_assets,1106,101,9.13,2,0.18,103,9.31,12.97,0.54,8.36,0.11,1.85,80.0,missing_cash_or_ta
+ratio_18,company_year_features,working_capital_to_assets,1106,123,11.12,0,0.0,123,11.12,11.89,0.0,10.97,0.0,1.52,86.67,missing_ca_cl_or_ta
+ratio_18,company_year_features,cfo_to_assets,1106,240,21.7,0,0.0,240,21.7,24.86,0.0,21.06,0.0,2.22,80.0,missing_cfo_or_ta
+ratio_18,company_year_features,sales_to_receivables,1106,263,23.78,6,0.54,269,24.32,28.11,0.54,22.91,0.54,10.61,86.67,missing_rev_or_rec
+ratio_18,company_year_features,receivables_to_assets,1106,237,21.43,3,0.27,240,21.7,23.78,0.0,20.96,0.33,9.09,86.67,missing_rec_or_ta
+ratio_18,company_year_features,inventory_to_assets,1106,55,4.97,352,31.83,407,36.8,8.65,24.86,4.23,33.22,0.0,80.0,zero_inventory_firm
+ratio_18,company_year_features,capex_to_assets,1106,184,16.64,11,0.99,195,17.63,17.3,1.08,16.5,0.98,6.06,80.0,missing_capex_or_ta
+ratio_18,company_year_features,debt_to_assets,1106,57,5.15,0,0.0,57,5.15,8.65,0.0,4.45,0.0,0.0,80.0,missing_debt_or_ta
+ratio_18,company_year_features,cash_flow_margin,1106,288,26.04,0,0.0,288,26.04,29.73,0.0,25.3,0.0,4.55,83.33,missing_cfo_or_rev
+ratio_18,company_year_features,accruals_bs_to_assets,1106,190,17.18,0,0.0,190,17.18,18.38,0.0,16.94,0.0,7.41,86.67,missing_bs_accruals_inputs
+ratio_18,company_year_features,accruals_cf_to_assets,1106,247,22.33,0,0.0,247,22.33,25.41,0.0,21.72,0.0,3.03,80.0,missing_ni_cfo_or_ta
+ratio_18,company_year_features,asset_growth,1106,58,5.24,0,0.0,58,5.24,9.73,0.0,4.34,0.0,0.0,80.0,missing_prior_assets
+nlp_text,filing_nlp_features,mda_drift_score,1106,974,88.07,0,0.0,974,88.07,89.19,0.0,87.84,0.0,40.74,100.0,Filing text not ingested or prior-year MD&A absent
+nlp_text,filing_nlp_features,doc_embedding_cosine_drift,1106,974,88.07,0,0.0,974,88.07,89.19,0.0,87.84,0.0,40.74,100.0,Filing text not ingested or prior-year MD&A absent
+nlp_text,filing_nlp_features,risk_drift_score,1106,983,88.88,0,0.0,983,88.88,87.57,0.0,89.14,0.0,37.04,100.0,Filing text not ingested or prior-year MD&A absent
+nlp_text,filing_nlp_features,vocab_jaccard_distance,1106,974,88.07,0,0.0,974,88.07,89.19,0.0,87.84,0.0,40.74,100.0,Filing text not ingested or prior-year MD&A absent
+nlp_text,filing_nlp_features,uncertainty_rate,1106,970,87.7,0,0.0,970,87.7,89.19,0.0,87.4,0.0,40.74,100.0,Filing text not ingested or prior-year MD&A absent
+nlp_text,filing_nlp_features,negative_sentiment_rate,1106,970,87.7,1,0.09,971,87.79,89.19,0.0,87.4,0.11,40.74,100.0,Filing text not ingested or prior-year MD&A absent
+nlp_text,filing_nlp_features,readability_fog_index,1106,970,87.7,0,0.0,970,87.7,89.19,0.0,87.4,0.0,40.74,100.0,Filing text not ingested or prior-year MD&A absent
+nlp_text,filing_nlp_features,financial_uncertainty_rate,1106,970,87.7,0,0.0,970,87.7,89.19,0.0,87.4,0.0,40.74,100.0,Filing text not ingested or prior-year MD&A absent
+graph,company_year_graph_features,graph_available,1106,0,0.0,1043,94.3,1043,94.3,0.0,95.14,0.0,94.14,0.0,0.0,Footnote absent or zero entity NER extraction
+graph,company_year_graph_features,graph_size,1106,0,0.0,1043,94.3,1043,94.3,0.0,95.14,0.0,94.14,0.0,0.0,Footnote absent or zero entity NER extraction
+graph,company_year_graph_features,num_nodes,1106,0,0.0,1043,94.3,1043,94.3,0.0,95.14,0.0,94.14,0.0,0.0,Footnote absent or zero entity NER extraction
+graph,company_year_graph_features,num_edges,1106,0,0.0,1043,94.3,1043,94.3,0.0,95.14,0.0,94.14,0.0,0.0,Footnote absent or zero entity NER extraction
+graph,company_year_graph_features,density,1106,0,0.0,1043,94.3,1043,94.3,0.0,95.14,0.0,94.14,0.0,0.0,Footnote absent or zero entity NER extraction
+graph,company_year_graph_features,avg_degree,1106,0,0.0,1043,94.3,1043,94.3,0.0,95.14,0.0,94.14,0.0,0.0,Footnote absent or zero entity NER extraction
+graph,company_year_graph_features,num_officers,1106,0,0.0,1044,94.39,1044,94.39,0.0,95.14,0.0,94.25,0.0,0.0,Footnote absent or zero entity NER extraction
+graph,company_year_graph_features,num_entities,1106,0,0.0,1076,97.29,1076,97.29,0.0,96.76,0.0,97.39,0.0,0.0,Footnote absent or zero entity NER extraction
+graph,company_year_graph_features,num_undisclosed_or_shell,1106,0,0.0,1072,96.93,1072,96.93,0.0,96.76,0.0,96.96,0.0,0.0,Footnote absent or zero entity NER extraction
+graph,company_year_graph_features,graph_anomaly_score,1106,0,0.0,1043,94.3,1043,94.3,0.0,95.14,0.0,94.14,0.0,0.0,Footnote absent or zero entity NER extraction
+fncs,company_year_fncs_features,cat1_revenue_recognition,1106,1106,100.0,0,0.0,1106,100.0,100.0,0.0,100.0,0.0,100.0,100.0,Normal variance
+fncs,company_year_fncs_features,cat2_inventory_valuation,1106,1106,100.0,0,0.0,1106,100.0,100.0,0.0,100.0,0.0,100.0,100.0,Normal variance
+fncs,company_year_fncs_features,cat3_reserve_manipulation,1106,1106,100.0,0,0.0,1106,100.0,100.0,0.0,100.0,0.0,100.0,100.0,Normal variance
+fncs,company_year_fncs_features,cat4_capitalized_expenses,1106,1106,100.0,0,0.0,1106,100.0,100.0,0.0,100.0,0.0,100.0,100.0,Normal variance
+fncs,company_year_fncs_features,cat5_related_party,1106,1106,100.0,0,0.0,1106,100.0,100.0,0.0,100.0,0.0,100.0,100.0,Normal variance
+fncs,company_year_fncs_features,cat6_governance_executive,1106,1106,100.0,0,0.0,1106,100.0,100.0,0.0,100.0,0.0,100.0,100.0,Normal variance
+fncs,company_year_fncs_features,cat7_going_concern,1106,1106,100.0,0,0.0,1106,100.0,100.0,0.0,100.0,0.0,100.0,100.0,Normal variance
+fncs,company_year_fncs_features,contradiction_score,1106,775,70.07,3,0.27,778,70.34,68.65,0.0,70.36,0.33,13.33,95.83,Normal variance
+fncs,company_year_fncs_features,fncs_score,1106,775,70.07,0,0.0,775,70.07,68.65,0.0,70.36,0.0,13.33,95.83,Normal variance

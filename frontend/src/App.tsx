@@ -7,12 +7,23 @@ import { MethodologyPage } from "./pages/MethodologyPage";
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"dashboard" | "search" | "profile" | "methodology">("dashboard");
-  const [selectedCik, setSelectedCik] = useState<string | null>("0000004977");
+  const [selectedCik, setSelectedCik] = useState<string | null>("0000874761");
 
   const handleSelectCompany = (cik: string) => {
     setSelectedCik(cik);
     setActiveTab("profile");
   };
+
+  React.useEffect(() => {
+    const handleNav = (e: any) => {
+      if (e.detail) {
+        setSelectedCik(e.detail);
+        setActiveTab("profile");
+      }
+    };
+    window.addEventListener("navigate-company", handleNav);
+    return () => window.removeEventListener("navigate-company", handleNav);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">

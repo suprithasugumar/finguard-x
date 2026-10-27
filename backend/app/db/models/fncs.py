@@ -21,7 +21,17 @@ class CompanyYearFNCSFeatures(Base, TimestampMixin):
     fiscal_year: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     accession_number: Mapped[str] = mapped_column(String(25), nullable=False, index=True)
 
-    # 7 Category Contradiction Scores [0, 1]
+    # 7 Real Spec Category Contradiction Scores [0, 1]
+    cat_growth: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    cat_profitability: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    cat_liquidity: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    cat_demand: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    cat_cash_flow: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    cat_risk: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    cat_outlook: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    category_statuses: Mapped[Any] = mapped_column(JSON, default=dict, nullable=False)
+
+    # Legacy Category Columns (maintained for schema backward compatibility)
     cat1_revenue_recognition: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     cat2_inventory_valuation: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     cat3_reserve_manipulation: Mapped[Optional[float]] = mapped_column(Float, nullable=True)

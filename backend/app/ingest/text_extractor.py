@@ -59,6 +59,14 @@ class FilingTextExtractor:
             "status": "success" if rp_text and len(rp_text) > 100 else "not_found",
         }
 
+        # 4. Extract Item 13 (Certain Relationships and Related Transactions)
+        item13_text, item13_loc = self._extract_item_13(text)
+        results["item_13"] = {
+            "text": item13_text,
+            "source_location": item13_loc,
+            "status": "success" if item13_text and len(item13_text) > 20 else "not_found",
+        }
+
         return results
 
     def _extract_mda(self, text: str) -> Tuple[Optional[str], Optional[str]]:
@@ -153,6 +161,34 @@ class FilingTextExtractor:
                 candidate = text[start_pos : start_pos + 30000].strip()
 
             if len(candidate) > 100:
+                return candidate, f"char_pos_{match.start()}_{start_pos}"
+
+        return None, None
+
+    def _extract_item_13(self, text: str) -> Tuple[Optional[str], Optional[str]]:
+        """Extract Item 13 Certain Relationships and Related Transactions text."""
+        item13_pattern = re.compile(
+            r"(?:^|\n)[ \t\xa0]*(?:ITEM|Item)\s+13[\.\:\s\–\—\xa0]+.{0,50}?(?:CERTAIN|Certain)\s+RELATIONSHIPS",
+            re.IGNORECASE,
+        )
+        end_pattern = re.compile(
+            r"(?:^|\n)[ \t\xa0]*(?:ITEM|Item)\s+(?:14|15)[\.\:\s\–\—\xa0]+",
+            re.IGNORECASE,
+        )
+
+        matches = list(item13_pattern.finditer(text))
+        if not matches:
+            return None, None
+
+        for match in reversed(matches):
+            start_pos = match.end()
+            end_match = end_pattern.search(text, start_pos)
+            if end_match:
+                candidate = text[start_pos : end_match.start()].strip()
+            else:
+                candidate = text[start_pos : start_pos + 40000].strip()
+
+            if len(candidate) > 20:
                 return candidate, f"char_pos_{match.start()}_{start_pos}"
 
         return None, None
